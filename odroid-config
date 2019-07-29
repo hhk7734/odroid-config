@@ -11,9 +11,7 @@ readonly ODROID_N2=""
 readonly ODROID_XU4="Hardkernel Odroid XU4"
 
 if [ -e /proc/device-tree/model ]; then
-    readonly DEVICE="$(cat /proc/device-tree/model)"
-else
-    readonly DEVICE="Unsupported device"
+    DEVICE="$(cat /proc/device-tree/model)"
 fi
 
 ###########################################################
@@ -24,11 +22,12 @@ ASK_TO_REBOOT=0
 
 case $DEVICE in
     *)
-        whiptail --yesno "Unsupported device. Would you like to continue?" 20 60 2
+        whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
         if [ $? -eq 1 ]; then
             # No
             exit 1
         fi
+        readonly DEVICE="Unsupported device"
         ;;
 esac
 
@@ -191,7 +190,6 @@ while true; do
         "99 Laboratory" "Experiment menu" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
-    echo $BUTTON
     if [ $BUTTON -eq 1 ] || [ $BUTTON -eq 255 ]; then
         # Finish or ESC
         do_finish
