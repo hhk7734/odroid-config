@@ -1,0 +1,108 @@
+#!/bin/sh
+
+if [ $(id -u) -ne 0 ]; then
+    printf "Must run as root privileges. Try 'sudo odroid-config'\n"
+    exit 1
+fi
+
+readonly ODROID_C1=""
+readonly ODROID_C2=""
+readonly ODROID_N2=""
+readonly ODROID_XU4="Hardkernel Odroid XU4"
+
+if [ -e /proc/device-tree/model ]; then
+    readonly DEVICE="$(cat /proc/device-tree/model)"
+else
+    readonly DEVICE="Unsupported device"
+fi
+
+###########################################################
+# GLOBAL VARIABLES
+ASK_TO_REBOOT=0
+# GLOBAL VARIABLES
+###########################################################
+
+case $DEVICE in
+    Hardkernel*) echo "$DEVICE is not yet supported" ;;
+    *)
+        whiptail --yesno "Unsupported device. Would you like to continue?" 20 60 2
+        if [ $? -eq 1 ]; then
+            # No
+            exit 1
+        fi
+        ;;
+esac
+
+calc_wt_size()
+{
+    # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
+    # output from tput. However in this case, tput detects neither stdout or 
+    # stderr is a tty and so only gives default 80, 24 values
+
+    WT_HEIGHT=17
+    WT_WIDTH=$(tput cols)
+
+    if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 80 ]; then
+        WT_WIDTH=80
+    fi
+    if [ "$WT_WIDTH" -gt 120 ]; then
+        WT_WIDTH=120
+    fi
+
+    WT_MENU_HEIGHT=$(($WT_HEIGHT-7))
+}
+
+do_finish()
+{
+    if [ $ASK_TO_REBOOT -eq 1 ]; then
+        whiptail --yesno "Would you like to reboot now?" 20 60 2
+        if [ $? -eq 0 ]; then
+            # Yes
+            sync
+            reboot
+        fi
+    fi
+    exit 0
+}
+
+do_change_pass()
+{
+    whiptail --msgbox "You will now be asked to enter a new password for the $SUDO_USER user" 20 60 1
+    passwd $SUDO_USER &&
+    whiptail --msgbox "Password changed successfully" 20 60 1
+}
+
+calc_wt_size
+while true; do
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+        --backtitle "$DEVICE" \
+        --menu "Setup Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Finish \
+        --ok-button Select \
+        "1 Change User Password" "Change password for the current user" \
+        "2 Network Manager" "Configure network settings" \
+        "3 Boot Options" "Configure options for start-up" \
+        "4 Localisation Options" "Set up language and regional settings to match your location" \
+        "5 Interfacing Options" "Configure connections to peripherals" \
+        "6 Overclock" "Configure overclocking for your Odroid" \
+        "7 Advanced Options" "Configure advanced settings" \
+        "8 Update" "Update this tool to the latest version" \
+        "99 Laboratory" "Experiment menu" \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Finish
+        do_finish
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        case $OPTION in
+            1\ *) do_change_pass ;;
+            2\ *) nmtui ;;
+            # 3\ *) do_boot_menu ;;
+            # 99\ *) do_laboratory ;;
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+    else
+        exit 1
+    fi
+done
