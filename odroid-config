@@ -23,7 +23,6 @@ ASK_TO_REBOOT=0
 ###########################################################
 
 case $DEVICE in
-    Hardkernel*) echo "$DEVICE is not yet supported" ;;
     *)
         whiptail --yesno "Unsupported device. Would you like to continue?" 20 60 2
         if [ $? -eq 1 ]; then
@@ -72,6 +71,108 @@ do_change_pass()
     whiptail --msgbox "Password changed successfully" 20 60 1
 }
 
+###########################################################
+# BOOT OPTIONS
+###########################################################
+
+do_boot_options()
+{
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+        --backtitle "$DEVICE" \
+        --menu "Boot Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        "1 Console" "Text console, requiring user to login" \
+        "2 Console Autologin" "Text console, automatically logged in as '$SUDO_USER' user" \
+        "3 Desktop" "Desktop GUI, requiring user to login" \
+        "4 Desktop Autologin" "Desktop GUI, automatically logged in as '$SUDO_USER' user" \
+        3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        case "$OPTION" in
+        1*)
+            # Console
+            systemctl set-default multi-user.target
+            ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+            if [ -e /etc/systemd/system/getty@tty1.service.d/autologin.conf ];then
+                rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
+            fi
+            ;;
+        2*)
+            # Console Autologin
+            systemctl set-default multi-user.target
+            ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+            if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
+                mkdir -p /etc/systemd/system/getty@tty1.service.d
+            fi
+            cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
+EOF
+            ;;
+        3*)
+            # Desktop
+            if [ -e /etc/init.d/lightdm ]; then
+                systemctl set-default graphical.target
+                ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+                rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
+                sed /etc/lightdm/lightdm.conf -i -e "s/^autologin-user=.*/#autologin-user=/"
+            else
+                whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60 2
+                return 1
+            fi
+            ;;
+        4*)
+            # Desktop Autologin
+            if [ -e /etc/init.d/lightdm ]; then
+                systemctl set-default graphical.target
+                ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+                if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
+                    mkdir -p /etc/systemd/system/getty@tty1.service.d
+                fi
+                cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
+EOF
+                sed /etc/lightdm/lightdm.conf -i -e "s/^\(#\|\)autologin-user=.*/autologin-user=$SUDO_USER/"
+            else
+                whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60 2
+                return 1
+            fi
+            ;;
+        *)
+            whiptail --msgbox "Programmer error, unrecognised boot option" 20 60 2
+            return 1
+            ;;
+        esac
+        ASK_TO_REBOOT=1
+    fi
+}
+
+###########################################################
+# LAB
+###########################################################
+
+do_laboratory()
+{
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    --backtitle "$DEVICE" \
+    --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+    --cancel-button Back \
+    --ok-button Select \
+    3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        case "$OPTION" in
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
+        esac || whiptail --msgbox "There was an error running option $FUN" 20 60 1
+    fi
+}
+
 calc_wt_size
 while true; do
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -90,16 +191,17 @@ while true; do
         "99 Laboratory" "Experiment menu" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
-    if [ $BUTTON -eq 1 ]; then
-        # Finish
+    echo $BUTTON
+    if [ $BUTTON -eq 1 ] || [ $BUTTON -eq 255 ]; then
+        # Finish or ESC
         do_finish
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case $OPTION in
             1\ *) do_change_pass ;;
             2\ *) nmtui ;;
-            # 3\ *) do_boot_menu ;;
-            # 99\ *) do_laboratory ;;
+            3\ *) do_boot_options ;;
+            99\ *) do_laboratory ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
     else
