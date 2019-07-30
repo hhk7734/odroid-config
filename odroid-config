@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $(id -u) -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     printf "Must run as root privileges. Try 'sudo odroid-config'\n"
     exit 1
 fi
@@ -47,14 +47,28 @@ calc_wt_size()
         WT_WIDTH=120
     fi
 
-    WT_MENU_HEIGHT=$(($WT_HEIGHT-7))
+    WT_MENU_HEIGHT=$((WT_HEIGHT-7))
+}
+
+is_defined()
+{
+    type "$1" > /dev/null
+    RET=$?
+    if [ $RET -eq 0 ]; then
+        # defined
+        echo 0
+    else
+        # not defined
+        echo 1
+    fi
 }
 
 do_finish()
 {
     if [ $ASK_TO_REBOOT -eq 1 ]; then
         whiptail --yesno "Would you like to reboot now?" 20 60 2
-        if [ $? -eq 0 ]; then
+        BUTTON=$?
+        if [ $BUTTON -eq 0 ]; then
             # Yes
             sync
             reboot
@@ -63,10 +77,14 @@ do_finish()
     exit 0
 }
 
-do_change_pass()
+###########################################################
+# CHANGE USER PASSWORD
+###########################################################
+
+do_change_user_password()
 {
     whiptail --msgbox "You will now be asked to enter a new password for the $SUDO_USER user" 20 60 1
-    passwd $SUDO_USER &&
+    passwd "$SUDO_USER" &&
     whiptail --msgbox "Password changed successfully" 20 60 1
 }
 
@@ -79,13 +97,19 @@ do_boot_options()
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
         --backtitle "$DEVICE" \
         --menu "Boot Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Back \
+        --ok-button Select \
         "1 Console" "Text console, requiring user to login" \
         "2 Console Autologin" "Text console, automatically logged in as '$SUDO_USER' user" \
         "3 Desktop" "Desktop GUI, requiring user to login" \
         "4 Desktop Autologin" "Desktop GUI, automatically logged in as '$SUDO_USER' user" \
         3>&1 1>&2 2>&3)
-
-    if [ $? -eq 0 ]; then
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
         case "$OPTION" in
         1*)
             # Console
@@ -208,7 +232,7 @@ do_ssh()
     fi
 
     DEFAULT=--defaultno
-    if [ $(get_ssh) -eq 0 ]; then
+    if [ "$(get_ssh)" -eq 0 ]; then
         DEFAULT=
     fi
 
@@ -230,6 +254,50 @@ do_ssh()
     whiptail --msgbox "The SSH server is $STATUS" 20 60 1
 }
 
+get_vnc()
+{
+    # todo
+    :
+}
+
+do_vnc()
+{
+    DEFAULT=--defaultno
+    if [ "$(get_vnc)" -eq 0 ]; then
+        DEFAULT=
+    fi
+
+    # todo
+}
+
+if [ ! "$(is_defined do_spi)" -eq 0 ]; then
+    do_spi()
+    {
+        whiptail --msgbox "This option is not supported." 20 60 1
+    }
+fi
+
+if [ ! "$(is_defined do_i2c)" -eq 0 ]; then
+    do_i2c()
+    {
+        whiptail --msgbox "This option is not supported." 20 60 1
+    }
+fi
+
+if [ ! "$(is_defined do_serial)" -eq 0 ]; then
+    do_serial()
+    {
+        whiptail --msgbox "This option is not supported." 20 60 1
+    }
+fi
+
+if [ ! "$(is_defined do_onewire)" -eq 0 ]; then
+    do_onewire()
+    {
+        whiptail --msgbox "This option is not supported." 20 60 1
+    }
+fi
+
 do_interfacing_options()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -238,6 +306,11 @@ do_interfacing_options()
         --cancel-button Back \
         --ok-button Select \
         "1 SSH" "Enable/Disable remote command line access to your Odroid using SSH" \
+        "2 VNC" "Enable/Disable graphical remote access to your Odroid using VNC" \
+        "3 SPI" "Enable/Disable automatic loading of SPI kernel module" \
+        "4 I2C" "Enable/Disable automatic loading of I2C kernel module" \
+        "5 Serial" "Enable/Disable shell and kernel messages on the serial connection" \
+        "6 1-Wire" "Enable/Disable one-wire interface" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -247,6 +320,11 @@ do_interfacing_options()
         # Select
         case "$OPTION" in
             1\ *) do_ssh ;;
+            2\ *) do_vnc ;;
+            3\ *) do_spi ;;
+            4\ *) do_i2c ;;
+            5\ *) do_serial ;;
+            6\ *) do_onewire ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
     fi
@@ -300,7 +378,7 @@ while true; do
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case $OPTION in
-            1\ *) do_change_pass ;;
+            1\ *) do_change_user_password ;;
             2\ *) nmtui ;;
             3\ *) do_boot_options ;;
             4\ *) do_localisation_options ;;
