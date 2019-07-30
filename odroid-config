@@ -149,17 +149,121 @@ EOF
 }
 
 ###########################################################
+# LOCALISATION OPTIONS
+###########################################################
+
+do_change_keyboard_layout()
+{
+    printf "Reloading keymap. This may take a short while\n"
+    dpkg-reconfigure keyboard-configuration
+    invoke-rc.d keyboard-setup start
+    setsid sh -c 'exec setupcon -k --force <> /dev/tty1 >&0 2>&1'
+    udevadm trigger --subsystem-match=input --action=change
+    return 0
+}
+
+do_localisation_options() {
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+        --backtitle "$DEVICE" \
+        --menu "Localisation Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Back \
+        --ok-button Select \
+        "1 Change Locale" "Set up language and regional settings to match your location" \
+        "2 Change Timezone" "Set up timezone to match your location" \
+        "3 Change Keyboard Layout" "Set the keyboard layout to match your keyboard" \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        case "$OPTION" in
+            1\ *) dpkg-reconfigure locales ;;
+            2\ *) dpkg-reconfigure tzdata ;;
+            3\ *) do_change_keyboard_layout ;;
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+    fi
+}
+
+###########################################################
+# INTERFACING OPTIONS
+###########################################################
+
+get_ssh()
+{
+    if service ssh status | grep -q inactive; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+do_ssh()
+{
+    if [ -e /var/log/regen_ssh_keys.log ] && ! grep -q "^finished" /var/log/regen_ssh_keys.log; then
+        whiptail --msgbox "Initial ssh key generation still running. Please wait and try again." 20 60 2
+        return 1
+    fi
+
+    DEFAULT=--defaultno
+    if [ $(get_ssh) -eq 0 ]; then
+        DEFAULT=
+    fi
+
+    whiptail --yesno "Would you like the SSH server to be enabled?" $DEFAULT 20 60 2
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        ssh-keygen -A &&
+        update-rc.d ssh enable &&
+        invoke-rc.d ssh start &&
+        STATUS=enabled
+    elif [ $BUTTON -eq 1 ]; then
+        update-rc.d ssh disable &&
+        invoke-rc.d ssh stop &&
+        STATUS=disabled
+    else
+        return $BUTTON
+    fi
+
+    whiptail --msgbox "The SSH server is $STATUS" 20 60 1
+}
+
+do_interfacing_options()
+{
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+        --backtitle "$DEVICE" \
+        --menu "Interfacing Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Back \
+        --ok-button Select \
+        "1 SSH" "Enable/Disable remote command line access to your Odroid using SSH" \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        case "$OPTION" in
+            1\ *) do_ssh ;;
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+    fi
+}
+
+###########################################################
 # LAB
 ###########################################################
 
 do_laboratory()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
-    --backtitle "$DEVICE" \
-    --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-    3>&1 1>&2 2>&3)
+        --backtitle "$DEVICE" \
+        --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Back \
+        --ok-button Select \
+        3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
         # Back
@@ -168,7 +272,7 @@ do_laboratory()
         # Select
         case "$OPTION" in
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $FUN" 20 60 1
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
     fi
 }
 
@@ -187,7 +291,7 @@ while true; do
         "6 Overclock" "Configure overclocking for your Odroid" \
         "7 Advanced Options" "Configure advanced settings" \
         "8 Update" "Update this tool to the latest version" \
-        "99 Laboratory" "Experiment menu" \
+        "99 Laboratory" "Experimental options" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ] || [ $BUTTON -eq 255 ]; then
@@ -199,6 +303,8 @@ while true; do
             1\ *) do_change_pass ;;
             2\ *) nmtui ;;
             3\ *) do_boot_options ;;
+            4\ *) do_localisation_options ;;
+            5\ *) do_interfacing_options ;;
             99\ *) do_laboratory ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
