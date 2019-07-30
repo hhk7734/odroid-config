@@ -236,15 +236,6 @@ do_localisation_options() {
 # INTERFACING OPTIONS
 ###########################################################
 
-get_ssh()
-{
-    if service ssh status | grep -q inactive; then
-        echo 1
-    else
-        echo 0
-    fi
-}
-
 do_ssh()
 {
     if [ -e /var/log/regen_ssh_keys.log ] && ! grep -q "^finished" /var/log/regen_ssh_keys.log; then
@@ -253,7 +244,7 @@ do_ssh()
     fi
 
     DEFAULT=--defaultno
-    if [ "$(get_ssh)" -eq 0 ]; then
+    if [ "$(systemctl is-active ssh)" = "active" ]; then
         DEFAULT=
     fi
 
@@ -263,32 +254,17 @@ do_ssh()
         ssh-keygen -A &&
         update-rc.d ssh enable &&
         invoke-rc.d ssh start &&
-        STATUS=enabled
+        whiptail --msgbox "The SSH server is enabled" 20 60
     elif [ $BUTTON -eq 1 ]; then
         update-rc.d ssh disable &&
         invoke-rc.d ssh stop &&
-        STATUS=disabled
-    else
-        return $BUTTON
+        whiptail --msgbox "The SSH server is disabled" 20 60
     fi
-
-    whiptail --msgbox "The SSH server is $STATUS" 20 60
-}
-
-get_vnc()
-{
-    # todo
-    :
 }
 
 do_vnc()
 {
-    DEFAULT=--defaultno
-    if [ "$(get_vnc)" -eq 0 ]; then
-        DEFAULT=
-    fi
-
-    # todo
+    whiptail --msgbox "This option is not supported." 20 60
 }
 
 if [ ! "$(is_defined do_spi)" -eq 0 ]; then
@@ -379,6 +355,34 @@ do_advanced_options()
 # LAB
 ###########################################################
 
+do_daily_apt_update()
+{
+    DEFAULT=--defaultno
+    if [ "$(systemctl is-enabled apt-daily.timer)" = "enabled" ]; then
+        DEFAULT=
+    fi
+
+    whiptail --yesno "Would you like the daily apt upgrade to be enabled?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        # Yes
+        systemctl enable apt-daily.timer
+        systemctl start apt-daily.timer
+        systemctl enable apt-daily-upgrade.timer
+        systemctl start apt-daily-upgrade.timer
+        whiptail --msgbox "The daily apt upgrade is enabled" 20 60
+    elif [ $BUTTON -eq 1 ]; then
+        # No
+        systemctl disable apt-daily.timer
+        systemctl stop apt-daily.timer
+        systemctl stop apt-daily.service
+        systemctl disable apt-daily-upgrade.timer
+        systemctl stop apt-daily-upgrade.timer
+        systemctl stop apt-daily-upgrade.service
+        whiptail --msgbox "The daily apt upgrade is disabled" 20 60
+    fi
+}
+
 do_laboratory()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -386,6 +390,7 @@ do_laboratory()
         --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
         --ok-button Select \
+        "1 Daily apt upgrade" "Enable/Disable daily apt upgrade" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -394,6 +399,7 @@ do_laboratory()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
+            1\ *) do_daily_apt_update ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
