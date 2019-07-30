@@ -70,7 +70,7 @@ is_defined()
 do_finish()
 {
     if [ $ASK_TO_REBOOT -eq 1 ]; then
-        whiptail --yesno "Would you like to reboot now?" 20 60 2
+        whiptail --yesno "Would you like to reboot now?" 20 60
         BUTTON=$?
         if [ $BUTTON -eq 0 ]; then
             # Yes
@@ -87,14 +87,83 @@ do_finish()
 
 do_change_user_password()
 {
-    whiptail --msgbox "You will now be asked to enter a new password for the $SUDO_USER user" 20 60 1
+    whiptail --msgbox "You will now be asked to enter a new password for the $SUDO_USER user" 20 60
     passwd "$SUDO_USER" &&
-    whiptail --msgbox "Password changed successfully" 20 60 1
+    whiptail --msgbox "Password changed successfully" 20 60
 }
 
 ###########################################################
 # BOOT OPTIONS
 ###########################################################
+
+do_console()
+{
+     # Console
+    systemctl set-default multi-user.target
+    ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+    if [ -e /etc/systemd/system/getty@tty1.service.d/autologin.conf ];then
+        rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    fi
+    ASK_TO_REBOOT=1
+}
+
+do_console_autologin()
+{
+    # Console Autologin
+    systemctl set-default multi-user.target
+    ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+    if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
+        mkdir -p /etc/systemd/system/getty@tty1.service.d
+    fi
+    cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
+EOF
+    ASK_TO_REBOOT=1
+}
+
+do_desktop()
+{
+    # Desktop
+    if [ -e /etc/init.d/lightdm ]; then
+        systemctl set-default graphical.target
+
+        if [ ! -e /etc/lightdm/lightdm.conf ]; then
+            cat > /etc/lightdm/lightdm.conf << EOF
+[SeatDefaults]
+autologin-user=
+autologin-user-timeout=0
+EOF
+        fi
+        sed /etc/lightdm/lightdm.conf -i -e "s/^autologin-user=.*/#autologin-user=/"
+        ASK_TO_REBOOT=1
+    else
+        whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60
+        return 1
+    fi
+}
+
+do_desktop_autologin()
+{
+    # Desktop Autologin
+    if [ -e /etc/init.d/lightdm ]; then
+        systemctl set-default graphical.target
+
+        if [ ! -e /etc/lightdm/lightdm.conf ]; then
+            cat > /etc/lightdm/lightdm.conf << EOF
+[SeatDefaults]
+autologin-user=
+autologin-user-timeout=0
+EOF
+        fi
+        sed /etc/lightdm/lightdm.conf -i -e "s/^\(#\|\)autologin-user=.*/autologin-user=$SUDO_USER/"
+        ASK_TO_REBOOT=1
+    else
+        whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60
+        return 1
+    fi
+}
 
 do_boot_options()
 {
@@ -115,64 +184,12 @@ do_boot_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-        1*)
-            # Console
-            systemctl set-default multi-user.target
-            ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
-            if [ -e /etc/systemd/system/getty@tty1.service.d/autologin.conf ];then
-                rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
-            fi
-            ;;
-        2*)
-            # Console Autologin
-            systemctl set-default multi-user.target
-            ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
-            if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
-                mkdir -p /etc/systemd/system/getty@tty1.service.d
-            fi
-            cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
-EOF
-            ;;
-        3*)
-            # Desktop
-            if [ -e /etc/init.d/lightdm ]; then
-                systemctl set-default graphical.target
-                ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
-                rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
-                sed /etc/lightdm/lightdm.conf -i -e "s/^autologin-user=.*/#autologin-user=/"
-            else
-                whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60 2
-                return 1
-            fi
-            ;;
-        4*)
-            # Desktop Autologin
-            if [ -e /etc/init.d/lightdm ]; then
-                systemctl set-default graphical.target
-                ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
-                if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
-                    mkdir -p /etc/systemd/system/getty@tty1.service.d
-                fi
-                cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
-EOF
-                sed /etc/lightdm/lightdm.conf -i -e "s/^\(#\|\)autologin-user=.*/autologin-user=$SUDO_USER/"
-            else
-                whiptail --msgbox "Do 'sudo apt install lightdm' to allow configuration of boot to desktop" 20 60 2
-                return 1
-            fi
-            ;;
-        *)
-            whiptail --msgbox "Programmer error, unrecognised boot option" 20 60 2
-            return 1
-            ;;
-        esac
-        ASK_TO_REBOOT=1
+            1*) do_console ;;
+            2*) do_console_autologin ;;
+            3*) do_desktop ;;
+            4*) do_desktop_autologin ;;
+            *) whiptail --msgbox "Programmer error, unrecognised boot option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
 
@@ -210,8 +227,8 @@ do_localisation_options() {
             1\ *) dpkg-reconfigure locales ;;
             2\ *) dpkg-reconfigure tzdata ;;
             3\ *) do_change_keyboard_layout ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
 
@@ -231,7 +248,7 @@ get_ssh()
 do_ssh()
 {
     if [ -e /var/log/regen_ssh_keys.log ] && ! grep -q "^finished" /var/log/regen_ssh_keys.log; then
-        whiptail --msgbox "Initial ssh key generation still running. Please wait and try again." 20 60 2
+        whiptail --msgbox "Initial ssh key generation still running. Please wait and try again." 20 60
         return 1
     fi
 
@@ -240,7 +257,7 @@ do_ssh()
         DEFAULT=
     fi
 
-    whiptail --yesno "Would you like the SSH server to be enabled?" $DEFAULT 20 60 2
+    whiptail --yesno "Would you like the SSH server to be enabled?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         ssh-keygen -A &&
@@ -255,7 +272,7 @@ do_ssh()
         return $BUTTON
     fi
 
-    whiptail --msgbox "The SSH server is $STATUS" 20 60 1
+    whiptail --msgbox "The SSH server is $STATUS" 20 60
 }
 
 get_vnc()
@@ -277,28 +294,28 @@ do_vnc()
 if [ ! "$(is_defined do_spi)" -eq 0 ]; then
     do_spi()
     {
-        whiptail --msgbox "This option is not supported." 20 60 1
+        whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if [ ! "$(is_defined do_i2c)" -eq 0 ]; then
     do_i2c()
     {
-        whiptail --msgbox "This option is not supported." 20 60 1
+        whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if [ ! "$(is_defined do_serial)" -eq 0 ]; then
     do_serial()
     {
-        whiptail --msgbox "This option is not supported." 20 60 1
+        whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if [ ! "$(is_defined do_onewire)" -eq 0 ]; then
     do_onewire()
     {
-        whiptail --msgbox "This option is not supported." 20 60 1
+        whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
@@ -329,8 +346,8 @@ do_interfacing_options()
             4\ *) do_i2c ;;
             5\ *) do_serial ;;
             6\ *) do_onewire ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
 
@@ -353,8 +370,8 @@ do_advanced_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
 
@@ -377,8 +394,8 @@ do_laboratory()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
 
@@ -388,7 +405,7 @@ do_laboratory()
 
 do_update()
 {
-    whiptail --msgbox "This option is not yet supported." 20 60 1
+    whiptail --msgbox "This option is not yet supported." 20 60
 }
 
 ###########################################################
@@ -426,8 +443,8 @@ while true; do
             6\ *) do_advanced_options ;;
             7\ *) do_update ;;
             99\ *) do_laboratory ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
-        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     else
         exit 1
     fi
