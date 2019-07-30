@@ -7,7 +7,7 @@ fi
 
 readonly ODROID_C1=""
 readonly ODROID_C2=""
-readonly ODROID_N2=""
+readonly ODROID_N2="Hardkernel ODROID-N2"
 readonly ODROID_XU4="Hardkernel Odroid XU4"
 
 if [ -e /proc/device-tree/model ]; then
@@ -21,6 +21,7 @@ ASK_TO_REBOOT=0
 ###########################################################
 
 case $DEVICE in
+    "$ODROID_N2") . /usr/lib/odroid-config/odroid-config-n2.sh ;;
     "$ODROID_XU4") . /usr/lib/odroid-config/odroid-config-xu4.sh ;;
     *)
         whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
@@ -334,6 +335,30 @@ do_interfacing_options()
 }
 
 ###########################################################
+# ADVANCED OPTIONS
+###########################################################
+
+do_advanced_options()
+{
+    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+        --backtitle "$DEVICE" \
+        --menu "Advanced Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --cancel-button Back \
+        --ok-button Select \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        case "$OPTION" in
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
+    fi
+}
+
+###########################################################
 # LAB
 ###########################################################
 
@@ -357,6 +382,19 @@ do_laboratory()
     fi
 }
 
+###########################################################
+# UPDATE
+###########################################################
+
+do_update()
+{
+    whiptail --msgbox "This option is not yet supported." 20 60 1
+}
+
+###########################################################
+# MAIN MENU
+###########################################################
+
 calc_wt_size
 while true; do
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -369,9 +407,8 @@ while true; do
         "3 Boot Options" "Configure options for start-up" \
         "4 Localisation Options" "Set up language and regional settings to match your location" \
         "5 Interfacing Options" "Configure connections to peripherals" \
-        "6 Overclock" "Configure overclocking for your Odroid" \
-        "7 Advanced Options" "Configure advanced settings" \
-        "8 Update" "Update this tool to the latest version" \
+        "6 Advanced Options" "Configure advanced settings" \
+        "7 Update" "Update this tool to the latest version" \
         "99 Laboratory" "Experimental options" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
@@ -386,6 +423,8 @@ while true; do
             3\ *) do_boot_options ;;
             4\ *) do_localisation_options ;;
             5\ *) do_interfacing_options ;;
+            6\ *) do_advanced_options ;;
+            7\ *) do_update ;;
             99\ *) do_laboratory ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60 1
