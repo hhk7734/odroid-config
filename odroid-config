@@ -21,15 +21,18 @@ ASK_TO_REBOOT=0
 ###########################################################
 
 case $DEVICE in
+    "$ODROID_XU4") . /usr/lib/odroid-config/odroid-config-xu4.sh ;;
     *)
         whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
         if [ $? -eq 1 ]; then
             # No
             exit 1
         fi
-        readonly DEVICE="Unsupported device"
+        DEVICE="Unsupported device"
         ;;
 esac
+
+readonly DEVICE
 
 calc_wt_size()
 {
