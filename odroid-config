@@ -14,27 +14,6 @@ if [ -e /proc/device-tree/model ]; then
     DEVICE="$(cat /proc/device-tree/model)"
 fi
 
-###########################################################
-# GLOBAL VARIABLES
-ASK_TO_REBOOT=0
-# GLOBAL VARIABLES
-###########################################################
-
-case $DEVICE in
-    "$ODROID_N2") . /usr/lib/odroid-config/odroid-config-n2.sh ;;
-    "$ODROID_XU4") . /usr/lib/odroid-config/odroid-config-xu4.sh ;;
-    *)
-        whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
-        if [ $? -eq 1 ]; then
-            # No
-            exit 1
-        fi
-        DEVICE="Unsupported device"
-        ;;
-esac
-
-readonly DEVICE
-
 calc_wt_size()
 {
     # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
@@ -54,17 +33,36 @@ calc_wt_size()
     WT_MENU_HEIGHT=$((WT_HEIGHT-7))
 }
 
+###########################################################
+# GLOBAL VARIABLES
+ASK_TO_REBOOT=0
+calc_wt_size
+# GLOBAL VARIABLES
+###########################################################
+
+case $DEVICE in
+    "$ODROID_N2") . /usr/lib/odroid-config/odroid-config-n2.sh ;;
+    "$ODROID_XU4") . /usr/lib/odroid-config/odroid-config-xu4.sh ;;
+    *)
+        whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
+        if [ $? -eq 1 ]; then
+            # No
+            exit 1
+        fi
+        DEVICE="Unsupported device"
+        ;;
+esac
+
+readonly DEVICE
+
 is_defined()
 {
-    type "$1" > /dev/null
-    RET=$?
-    if [ $RET -eq 0 ]; then
-        # defined
-        echo 0
-    else
-        # not defined
-        echo 1
-    fi
+    command -V "$1" 2>/dev/null | grep -q shell
+}
+
+is_installed()
+{
+    [ -n "$(command -v "$1" 2>/dev/null)" ]
 }
 
 do_finish()
@@ -267,28 +265,28 @@ do_vnc()
     whiptail --msgbox "This option is not supported." 20 60
 }
 
-if [ ! "$(is_defined do_spi)" -eq 0 ]; then
+if ! is_defined do_spi; then
     do_spi()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if [ ! "$(is_defined do_i2c)" -eq 0 ]; then
+if ! is_defined do_i2c; then
     do_i2c()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if [ ! "$(is_defined do_serial)" -eq 0 ]; then
+if ! is_defined do_serial; then
     do_serial()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if [ ! "$(is_defined do_onewire)" -eq 0 ]; then
+if ! is_defined do_onewire; then
     do_onewire()
     {
         whiptail --msgbox "This option is not supported." 20 60
@@ -304,10 +302,10 @@ do_interfacing_options()
         --ok-button Select \
         "1 SSH" "Enable/Disable remote command line access to your Odroid using SSH" \
         "2 VNC" "Enable/Disable graphical remote access to your Odroid using VNC" \
-        "3 SPI" "Enable/Disable automatic loading of SPI kernel module" \
-        "4 I2C" "Enable/Disable automatic loading of I2C kernel module" \
-        "5 Serial" "Enable/Disable shell and kernel messages on the serial connection" \
-        "6 1-Wire" "Enable/Disable one-wire interface" \
+        "3 SPI" "Enable/Disable SPI interface" \
+        "4 I2C" "Enable/Disable I2C interface" \
+        "5 Serial" "Enable/Disable Serial(UART) interface" \
+        "6 1-Wire" "Enable/Disable 1-Wire interface" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -383,6 +381,25 @@ do_daily_apt_update()
     fi
 }
 
+do_install_wiringpi()
+{
+    whiptail --yesno "Would you like to install wiringPi?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        # Yes
+        if ! is_installed git; then
+            apt install -y git
+        fi
+        if [ -e /tmp/wiringPi ]; then
+            rm -r /tmp/wiringPi
+        fi
+        git clone https://github.com/hardkernel/wiringPi /tmp/wiringPi &&
+        cd /tmp/wiringPi &&
+        ./build &&
+        whiptail --msgbox "The wiringPi for Odroid was installed." 20 60
+    fi
+}
+
 do_laboratory()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -391,6 +408,7 @@ do_laboratory()
         --cancel-button Back \
         --ok-button Select \
         "1 Daily apt upgrade" "Enable/Disable daily apt upgrade" \
+        "2 Install wiringPi" "Install wiringPi for Odroid" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -400,6 +418,7 @@ do_laboratory()
         # Select
         case "$OPTION" in
             1\ *) do_daily_apt_update ;;
+            2\ *) do_install_wiringpi ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
@@ -418,7 +437,6 @@ do_update()
 # MAIN MENU
 ###########################################################
 
-calc_wt_size
 while true; do
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
         --backtitle "$DEVICE" \
