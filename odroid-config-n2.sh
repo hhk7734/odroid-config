@@ -137,3 +137,27 @@ The serial2 interface is $([ "$SERIAL_2" = ON ] && echo enabled || echo disabled
         fi
     fi
 }
+
+do_onewire()
+{
+    DEFAULT=--defaultno
+    if lsmod | grep -q w1_; then
+        DEFAULT=
+    fi
+
+    whiptail --yesno "Would you like the 1-Wire interface to be enabled?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        if [ -n "$DEFAULT" ]; then
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status okay
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "The 1-Wire interface is enabled" 20 60
+        fi
+    elif [ $BUTTON -eq 1 ]; then
+        if [ -z "$DEFAULT" ]; then
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status disabled
+            whiptail --msgbox "The 1-Wire interface is disabled" 20 60
+            ASK_TO_REBOOT=1
+        fi
+    fi
+}
