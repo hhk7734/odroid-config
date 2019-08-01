@@ -3,20 +3,24 @@
 do_spi()
 {
     DEFAULT=--defaultno
-    if lsmod | grep -q spi; then
+    if [ -e /dev/spidev0* ]; then
         DEFAULT=
     fi
 
     whiptail --yesno "Would you like the SPI interface to be enabled?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
-        modprobe spidev
-        modprobe spi_meson_spicc
-        whiptail --msgbox "The SPI interface is enabled" 20 60
+        if [ -n "$DEFAULT" ]; then
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status okay
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the SPI interface will be enabled." 20 60
+        fi
     elif [ $BUTTON -eq 1 ]; then
-        modprobe -r spidev
-        modprobe -r spi_meson_spicc
-        whiptail --msgbox "The SPI interface is disabled" 20 60
+        if [ -z "$DEFAULT" ]; then
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status disabled
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the SPI interface will be disabled." 20 60
+        fi
     fi
 }
 
@@ -73,8 +77,8 @@ do_i2c()
             fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
             fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_3" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
-            whiptail --msgbox "The I2C-2 interface is $([ "$I2C_2" = ON ] && echo enabled || echo disabled).\n\
-The I2C-3 interface is $([ "$I2C_3" = ON ] && echo enabled || echo disabled)." 20 60
+            whiptail --msgbox "After rebooting, the I2C-2 interface will be $([ "$I2C_2" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the I2C-3 interface will be $([ "$I2C_3" = ON ] && echo enabled || echo disabled)." 20 60
         fi
     fi
 }
@@ -132,8 +136,8 @@ do_serial()
             fdtput -t s /media/boot/meson64_odroidn2.dtb /serial@ffd24000 status "$([ "$SERIAL_1" = ON ] && echo okay || echo disabled)"
             fdtput -t s /media/boot/meson64_odroidn2.dtb /serial@ffd23000 status "$([ "$SERIAL_2" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
-            whiptail --msgbox "The serial1 interface is $([ "$SERIAL_1" = ON ] && echo enabled || echo disabled).\n\
-The serial2 interface is $([ "$SERIAL_2" = ON ] && echo enabled || echo disabled)." 20 60
+            whiptail --msgbox "After rebooting, the serial1 interface will be $([ "$SERIAL_1" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the serial2 interface will be $([ "$SERIAL_2" = ON ] && echo enabled || echo disabled)." 20 60
         fi
     fi
 }
@@ -151,12 +155,12 @@ do_onewire()
         if [ -n "$DEFAULT" ]; then
             fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status okay
             ASK_TO_REBOOT=1
-            whiptail --msgbox "The 1-Wire interface is enabled" 20 60
+            whiptail --msgbox "After rebooting, the 1-Wire interface will be enabled" 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
             fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status disabled
-            whiptail --msgbox "The 1-Wire interface is disabled" 20 60
+            whiptail --msgbox "After rebooting, the 1-Wire interface will be disabled" 20 60
             ASK_TO_REBOOT=1
         fi
     fi
