@@ -1,5 +1,9 @@
 #!/bin/sh
 
+###########################################################
+# INTERFACING OPTIONS
+###########################################################
+
 do_spi()
 {
     DEFAULT=--defaultno
@@ -163,5 +167,44 @@ do_onewire()
             whiptail --msgbox "After rebooting, the 1-Wire interface will be disabled" 20 60
             ASK_TO_REBOOT=1
         fi
+    fi
+}
+
+###########################################################
+# ADVANCED OPTIONS
+###########################################################
+
+get_resolution()
+{
+    for i in $(seq "$(grep -c -e "^#.*|.*x.*Hz.*" "$BOOT_INI")"); do
+        READ_RESOLUTION=$(grep -e "^#.*|.*x.*Hz.*" "$BOOT_INI" | sed -n "$i"p)
+        RESOLUTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\1/')
+        RESOLUTION_DESCRIPTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\2/')
+        echo "\"$(( "$i" + 1 )) $RESOLUTION\"" \
+        "\"$RESOLUTION_DESCRIPTION\"" \
+        "\"$([ "$AUTO_RESOLUTION" = "true" ] && echo "OFF" || echo "$([ "$CURRENT_RESOLUTION" = "$RESOLUTION" ] && echo "ON" || echo "OFF")")\"" \
+        "\\"
+    done
+}
+
+do_resolution()
+{
+    AUTO_RESOLUTION=$(grep -e "^setenv display_autodetect" "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
+    CURRENT_RESOLUTION=$(grep -e "^setenv hdmimode " "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
+    eval "OPTION=\$(whiptail --title \"ODROID Configuration Tool\" \\
+            --backtitle \"$DEVICE\" \\
+            --radiolist \"Select the serial(UART) interfaces to be enabled.(using the space bar)\" \"$WT_HEIGHT\" \"$WT_WIDTH\" \"$WT_MENU_HEIGHT\" \\
+            --cancel-button Back \
+            --ok-button Select \
+            $(get_resolution)
+            3>&1 1>&2 2>&3)
+            BUTTON=\$?"
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        OPTION=$(echo "$OPTION" | sed 's/.*[[:space:]]\(.*\)/\1/')
+        eval "sed 's/^setenv hdmimode \".*\"/ setenv hdmimode \"\"/' $BOOT_INI"
     fi
 }
