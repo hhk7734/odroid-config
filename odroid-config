@@ -37,6 +37,7 @@ calc_wt_size()
 # GLOBAL VARIABLES
 ASK_TO_REBOOT=0
 calc_wt_size
+BOOT_INI=/media/boot/boot.ini
 # GLOBAL VARIABLES
 ###########################################################
 
@@ -329,6 +330,13 @@ do_interfacing_options()
 # ADVANCED OPTIONS
 ###########################################################
 
+if ! is_defined do_resolution; then
+    do_resolution()
+    {
+        whiptail --msgbox "This option is not supported." 20 60
+    }
+fi
+
 do_advanced_options()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -336,6 +344,7 @@ do_advanced_options()
         --menu "Advanced Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
         --ok-button Select \
+        "1 Resolution" "Set a specific screen resolution" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -344,6 +353,7 @@ do_advanced_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
+            1\ *) do_resolution ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
