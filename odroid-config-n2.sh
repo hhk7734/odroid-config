@@ -16,12 +16,14 @@ do_spi()
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
             fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status okay
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000/spidev@0 status okay
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the SPI interface will be enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
             fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status disabled
+            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000/spidev@0 status disabled
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the SPI interface will be disabled." 20 60
         fi
