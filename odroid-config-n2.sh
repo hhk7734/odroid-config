@@ -211,6 +211,7 @@ do_resolution()
         if [ "$OPTION" = "RESOLUTION" ]; then
             if [ "$AUTO_RESOLUTION" = "false" ]; then
                 sed -i 's/^setenv display_autodetect \".*\"/setenv display_autodetect \"true\"/' "$BOOT_INI"
+                sed -i 's/^setenv hdmimode \".*\"/setenv hdmimode \"1080p60hz\"/' "$BOOT_INI"
                 ASK_TO_REBOOT=1
                 whiptail --msgbox "After rebooting, the resolution will be automatically set." 20 60
             fi
