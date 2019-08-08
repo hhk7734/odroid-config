@@ -12,19 +12,18 @@ do_spi()
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
             config_setting spidev enable
-            config_setting spi_gpio enable
-            config_setting spi_bitbang enable
+            config_setting spicc enable
             whiptail --msgbox "The SPI interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
             config_setting spidev disalbe
-            config_setting spi_gpio disable
-            config_setting spi_bitbang disable
+            config_setting spicc disable
             whiptail --msgbox "The SPI interface is disabled." 20 60
         fi
     fi
 }
+
 
 do_i2c()
 {
