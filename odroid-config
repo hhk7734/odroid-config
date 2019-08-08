@@ -391,7 +391,7 @@ do_daily_apt_update()
     fi
 }
 
-do_install_wiringpi()
+do_wiringpi_installation()
 {
     whiptail --yesno "Would you like to install wiringPi?" $DEFAULT 20 60
     BUTTON=$?
@@ -410,6 +410,28 @@ do_install_wiringpi()
     fi
 }
 
+do_samba_server_installation()
+{
+    whiptail --yesno "Would you like to install Samba server?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        # Yes
+        apt install -y samba &&
+        smbpasswd -a "$SUDO_USER" &&
+        cat > /etc/samba/smb.conf << EOF
+[$SUDO_USER]
+comment = $SUDO_USER
+path = $HOME
+valid users = $SUDO_USER
+writable = yes
+create mask = 0644
+directory mask = 0755
+EOF
+        systemctl restart smbd &&
+        whiptail --msgbox "The Samba server was installed.\n\nAvailable access path: $HOME\nValid user: $SUDO_USER" 20 60
+    fi
+}
+
 do_laboratory()
 {
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
@@ -418,7 +440,8 @@ do_laboratory()
         --cancel-button Back \
         --ok-button Select \
         "1 Daily apt upgrade" "Enable/Disable daily apt upgrade" \
-        "2 Install wiringPi" "Install wiringPi for Odroid" \
+        "2 WiringPi installation" "WiringPi installation for Odroid" \
+        "3 Samba server installation" "Samba server installation" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -428,7 +451,8 @@ do_laboratory()
         # Select
         case "$OPTION" in
             1\ *) do_daily_apt_update ;;
-            2\ *) do_install_wiringpi ;;
+            2\ *) do_wiringpi_installation ;;
+            3\ *) do_samba_server_installation ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
