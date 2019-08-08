@@ -1,0 +1,11 @@
+[Unit]
+Description=ODROID configuration
+
+[Service]
+User=root
+Group=root
+ExecStart=/usr/lib/odroid-config/odroid-config-settings.sh
+Restart=no
+
+[Install]
+WantedBy=default.target

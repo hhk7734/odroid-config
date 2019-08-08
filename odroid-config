@@ -5,8 +5,8 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-readonly ODROID_C1=""
-readonly ODROID_C2=""
+readonly ODROID_C1P="AMLOGIC"
+readonly ODROID_C2="ODROID-C2"
 readonly ODROID_N2="Hardkernel ODROID-N2"
 readonly ODROID_XU4="Hardkernel Odroid XU4"
 
@@ -38,12 +38,27 @@ calc_wt_size()
 ASK_TO_REBOOT=0
 calc_wt_size
 BOOT_INI=/media/boot/boot.ini
+CONFIG_SETTINGS=/usr/lib/odroid-config/odroid-config-settings.sh
 # GLOBAL VARIABLES
 ###########################################################
 
 case $DEVICE in
-    "$ODROID_N2") . /usr/lib/odroid-config/odroid-config-n2.sh ;;
-    "$ODROID_XU4") . /usr/lib/odroid-config/odroid-config-xu4.sh ;;
+    "$ODROID_C1P")
+        . /usr/lib/odroid-config/odroid-config-c1p.sh
+        DEVICE="Hardkernel ODROID C0/C1+"
+        ;;
+    "$ODROID_C2")
+        . /usr/lib/odroid-config/odroid-config-c2.sh
+        DEVICE="Hardkernel ODROID C2"
+        ;;
+    "$ODROID_N2")
+        . /usr/lib/odroid-config/odroid-config-n2.sh
+        DEVICE="Hardkernel ODROID N2"
+        ;;
+    "$ODROID_XU4")
+        . /usr/lib/odroid-config/odroid-config-xu4.sh
+        DEVICE="Hardkernel ODROID XU4"
+        ;;
     *)
         whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
         if [ $? -eq 1 ]; then
@@ -56,7 +71,7 @@ esac
 
 readonly DEVICE
 
-is_defined()
+exist_in_the_shell()
 {
     command -V "$1" 2>/dev/null | grep -q shell
 }
@@ -64,6 +79,11 @@ is_defined()
 is_installed()
 {
     [ -n "$(command -v "$1" 2>/dev/null)" ]
+}
+
+exist_in()
+{
+    [ -n "$(find "$1" -name "$2" 2>/dev/null)" ]
 }
 
 do_finish()
@@ -78,6 +98,24 @@ do_finish()
         fi
     fi
     exit 0
+}
+
+config_setting()
+{
+    # $1 module, $2 enable or disable
+    local REMOVE=" -r "
+    if [ "$2" = "enable" ] || [ "$2" = "enabled" ]; then
+        REMOVE=" "
+    fi
+
+    eval "modprobe$REMOVE$1"
+    if grep -q "^modprobe.*$1" "$CONFIG_SETTINGS"; then
+            sed -i "s/^modprobe.*$1/modprobe$REMOVE$1/" "$CONFIG_SETTINGS"
+    else
+        cat >> "$CONFIG_SETTINGS" << EOF
+modprobe$REMOVE$1
+EOF
+    fi
 }
 
 ###########################################################
@@ -266,28 +304,28 @@ do_vnc()
     whiptail --msgbox "This option is not supported." 20 60
 }
 
-if ! is_defined do_spi; then
+if ! exist_in_the_shell do_spi; then
     do_spi()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if ! is_defined do_i2c; then
+if ! exist_in_the_shell do_i2c; then
     do_i2c()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if ! is_defined do_serial; then
+if ! exist_in_the_shell do_serial; then
     do_serial()
     {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-if ! is_defined do_onewire; then
+if ! exist_in_the_shell do_onewire; then
     do_onewire()
     {
         whiptail --msgbox "This option is not supported." 20 60
@@ -330,7 +368,7 @@ do_interfacing_options()
 # ADVANCED OPTIONS
 ###########################################################
 
-if ! is_defined do_resolution; then
+if ! exist_in_the_shell do_resolution; then
     do_resolution()
     {
         whiptail --msgbox "This option is not supported." 20 60
