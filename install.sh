@@ -16,8 +16,7 @@ SCRIPT_PATH=$(dirname "$(realpath "$0")")
 if [ ! -e /usr/lib/odroid-config ]; then
     mkdir -p /usr/lib/odroid-config
 fi
-cp "$SCRIPT_PATH"/odroid-config-*.sh /usr/lib/odroid-config/
-chmod +x /usr/lib/odroid-config/*.sh
+cp -a "$SCRIPT_PATH"/models /usr/lib/odroid-config/
 
 cp "$SCRIPT_PATH"/odroid-config /usr/bin/odroid-config
 chmod +x /usr/bin/odroid-config

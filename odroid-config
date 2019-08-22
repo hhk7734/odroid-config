@@ -44,19 +44,19 @@ CONFIG_SETTINGS=/usr/lib/odroid-config/odroid-config-settings.sh
 
 case $DEVICE in
     "$ODROID_C1P")
-        . /usr/lib/odroid-config/odroid-config-c1p.sh
+	MODEL=c1
         DEVICE="Hardkernel ODROID C0/C1+"
         ;;
     "$ODROID_C2")
-        . /usr/lib/odroid-config/odroid-config-c2.sh
+	MODEL=c2
         DEVICE="Hardkernel ODROID C2"
         ;;
     "$ODROID_N2")
-        . /usr/lib/odroid-config/odroid-config-n2.sh
+	MODEL=n2
         DEVICE="Hardkernel ODROID N2"
         ;;
     "$ODROID_XU4")
-        . /usr/lib/odroid-config/odroid-config-xu4.sh
+	MODEL=xu4
         DEVICE="Hardkernel ODROID XU4"
         ;;
     *)
@@ -68,6 +68,8 @@ case $DEVICE in
         DEVICE="Unsupported device"
         ;;
 esac
+
+. /usr/lib/odroid-config/models/${MODEL}/functions
 
 readonly DEVICE
 
