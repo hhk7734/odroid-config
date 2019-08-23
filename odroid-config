@@ -5,15 +5,6 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-readonly ODROID_C1P="AMLOGIC"
-readonly ODROID_C2="ODROID-C2"
-readonly ODROID_N2="Hardkernel ODROID-N2"
-readonly ODROID_XU4="Hardkernel Odroid XU4"
-
-if [ -e /proc/device-tree/model ]; then
-    DEVICE="$(cat /proc/device-tree/model)"
-fi
-
 calc_wt_size()
 {
     # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
@@ -42,21 +33,22 @@ CONFIG_SETTINGS=/usr/lib/odroid-config/odroid-config-settings.sh
 # GLOBAL VARIABLES
 ###########################################################
 
+[ "x${DEVICE}" = "x" ] && DEVICE="$(cat /proc/device-tree/model)"
 case $DEVICE in
-    "$ODROID_C1P")
-	MODEL=c1
+    "AMLOGIC")
+        MODEL=c1
         DEVICE="Hardkernel ODROID C0/C1+"
         ;;
-    "$ODROID_C2")
-	MODEL=c2
+    "ODROID-C2")
+        MODEL=c2
         DEVICE="Hardkernel ODROID C2"
         ;;
-    "$ODROID_N2")
-	MODEL=n2
+    "Hardkernel ODROID-N2")
+        MODEL=n2
         DEVICE="Hardkernel ODROID N2"
         ;;
-    "$ODROID_XU4")
-	MODEL=xu4
+    "Hardkernel Odroid XU4")
+        MODEL=xu4
         DEVICE="Hardkernel ODROID XU4"
         ;;
     *)
