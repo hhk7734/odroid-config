@@ -1,0 +1,15 @@
+Source: odroid-config
+Section: utils
+Priority: optional
+Maintainer: Hardkernel Co,. Ltd. <odroid@hardkernel.com>
+Uploaders: Hyeonki Hong <hhk7734@gmail.com>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.8
+Homepage: https://github.com/hhk7734/odroid-config
+
+Package: odroid-config
+Architecture: arm64 armhf
+Depends: build-essential, device-tree-compiler, whiptail
+Description: Odroid configuration tool
+ A simple configuration tool for common Odroid administrative tasks,
+ currently supporting ODROID-XU4/ODROID-C1/ODROID-C2/ODROID-N2.

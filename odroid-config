@@ -34,7 +34,7 @@ CONFIG_SETTINGS=/usr/lib/odroid-config/odroid-config-settings.sh
 ###########################################################
 
 [ "x${DEVICE}" = "x" ] && DEVICE="$(cat /proc/device-tree/model)"
-case $DEVICE in
+case "$DEVICE" in
     "AMLOGIC")
         MODEL=c1
         DEVICE="Hardkernel ODROID C0/C1+"

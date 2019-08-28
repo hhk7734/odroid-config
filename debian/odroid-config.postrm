@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e
+
+[ "x${DEVICE}" = "x" ] && DEVICE="$(cat /proc/device-tree/model)"
+case "$DEVICE" in
+    "AMLOGIC")
+        MODEL=c1
+        DEVICE="Hardkernel ODROID C0/C1+"
+        ;;
+    "ODROID-C2")
+        MODEL=c2
+        DEVICE="Hardkernel ODROID C2"
+        ;;
+    "Hardkernel ODROID-N2")
+        MODEL=n2
+        DEVICE="Hardkernel ODROID N2"
+        ;;
+    "Hardkernel Odroid XU4")
+        MODEL=xu4
+        DEVICE="Hardkernel ODROID XU4"
+        ;;
+    *)
+        echo "Unknown board type"
+        exit 1
+        ;;
+esac
+
+find /usr/lib/odroid-config/models/ -type d ! -name ${MODEL} -delete
+
+#DEBHELPER#
