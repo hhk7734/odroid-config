@@ -5,6 +5,10 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+if [ "x${SUDO_USER}" = "x" ]; then
+    export SUDO_USER=root
+fi
+
 calc_wt_size()
 {
     # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
@@ -504,8 +508,9 @@ do_update()
             add-apt-repository ppa:hardkernel/ppa
         fi
         apt update
-        apt install -y odroid-config
-        whiptail --msgbox "The odroid-config has been updated." 20 60
+        apt install -y odroid-config &&
+        whiptail --msgbox "The odroid-config has been updated." 20 60 &&
+        do_finish
     fi
 }
 
