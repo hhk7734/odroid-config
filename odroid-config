@@ -225,7 +225,7 @@ do_boot_options()
 }
 
 ###########################################################
-# LOCALISATION OPTIONS
+# LOCALIZATION OPTIONS
 ###########################################################
 
 do_change_keyboard_layout()
@@ -238,10 +238,11 @@ do_change_keyboard_layout()
     return 0
 }
 
-do_localisation_options() {
+do_localization_options()
+{
     OPTION=$(whiptail --title "ODROID Configuration Tool" \
         --backtitle "$DEVICE" \
-        --menu "Localisation Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        --menu "Localization Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
         --ok-button Select \
         "1 Change Locale" "Set up language and regional settings to match your location" \
@@ -521,7 +522,7 @@ while true; do
         "1 Change User Password" "Change password for the current user" \
         "2 Network Manager" "Configure network settings" \
         "3 Boot Options" "Configure options for start-up" \
-        "4 Localisation Options" "Set up language and regional settings to match your location" \
+        "4 Localization Options" "Set up language and regional settings to match your location" \
         "5 Interfacing Options" "Configure connections to peripherals" \
         "6 Advanced Options" "Configure advanced settings" \
         "7 Update" "Update this tool to the latest version" \
@@ -537,7 +538,7 @@ while true; do
             1\ *) do_change_user_password ;;
             2\ *) nmtui ;;
             3\ *) do_boot_options ;;
-            4\ *) do_localisation_options ;;
+            4\ *) do_localization_options ;;
             5\ *) do_interfacing_options ;;
             6\ *) do_advanced_options ;;
             7\ *) do_update ;;
