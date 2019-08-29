@@ -2,6 +2,7 @@ odroid-config (0.1-1) unstable; urgency=medium
 
   * Add odroid-cnofig update function
   * Fix rm commad error in odroid-config.postrm
+  * Move removing model code from .postrm to .postinst
 
  -- Hyeonki Hong <hhk7734@gmail.com>  Sat, 29 Aug 2019 09:20:00 +0900
 
