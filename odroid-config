@@ -438,7 +438,7 @@ do_wiringpi_installation()
         git clone https://github.com/hardkernel/wiringPi /tmp/wiringPi &&
         cd /tmp/wiringPi &&
         ./build &&
-        whiptail --msgbox "The wiringPi for Odroid was installed." 20 60
+        whiptail --msgbox "The wiringPi for Odroid has been installed." 20 60
     fi
 }
 
@@ -460,7 +460,7 @@ create mask = 0644
 directory mask = 0755
 EOF
         systemctl restart smbd &&
-        whiptail --msgbox "The Samba server was installed.\n\nAvailable access path: $HOME\nValid user: $SUDO_USER" 20 60
+        whiptail --msgbox "The Samba server has been installed.\n\nAvailable access path: $HOME\nValid user: $SUDO_USER" 20 60
     fi
 }
 
@@ -496,7 +496,16 @@ do_laboratory()
 
 do_update()
 {
-    whiptail --msgbox "This option is not yet supported." 20 60
+    whiptail --yesno "Would you like to update odroid-config?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        if ! exist_in "/etc/apt/sources.list.d/" "hardkernel-ubuntu-ppa*"; then
+            add-apt-repository ppa:hardkernel/ppa
+        fi
+        apt update
+        apt install -y odroid-config
+        whiptail --msgbox "The odroid-config has been updated." 20 60
+    fi
 }
 
 ###########################################################
