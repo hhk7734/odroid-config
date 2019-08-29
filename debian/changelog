@@ -1,3 +1,11 @@
+odroid-config (0.1-2) unstable; urgency=medium
+
+  * Fix typo(Thanks to rooted@forum.odroid.com)
+  * Remove duplicate functions and prevent globs in N2 functions
+  * Fix do_resolution() in n2/functions
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Sat, 29 Aug 2019 16:02:00 +0900
+
 odroid-config (0.1-1) unstable; urgency=medium
 
   * Add odroid-cnofig update function
