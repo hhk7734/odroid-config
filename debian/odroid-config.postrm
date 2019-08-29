@@ -26,6 +26,8 @@ case "$DEVICE" in
         ;;
 esac
 
-find /usr/lib/odroid-config/models/ -type d ! -name ${MODEL} -delete
+DIRECTORY="/usr/lib/odroid-config/models/"
+
+find "$DIRECTORY" -depth ! -path "$DIRECTORY" -type d ! -name "${MODEL}" -exec rm -r {} \;
 
 #DEBHELPER#
