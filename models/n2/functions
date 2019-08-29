@@ -7,7 +7,7 @@
 do_spi()
 {
     DEFAULT=--defaultno
-    if [ -e /dev/spidev0* ]; then
+    if exist_in "/dev/" "spidev0*" ; then
         DEFAULT=
     fi
 
@@ -182,66 +182,7 @@ get_resolution()
         READ_RESOLUTION=$(grep -e "^#.*|.*x.*Hz.*" "$BOOT_INI" | sed -n "$i"p)
         RESOLUTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\1/')
         RESOLUTION_DESCRIPTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\2/')
-        echo "\"$(( $i + 1 )) $RESOLUTION\"" \
-        "\"$RESOLUTION_DESCRIPTION\"" \
-        "\"$([ "$AUTO_RESOLUTION" = "true" ] && echo "OFF" || echo "$([ "$CURRENT_RESOLUTION" = "$RESOLUTION" ] && echo "ON" || echo "OFF")")\"" \
-        "\\"
-    done
-}
-
-do_resolution()
-{
-    AUTO_RESOLUTION=$(grep -e "^setenv display_autodetect" "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
-    CURRENT_RESOLUTION=$(grep -e "^setenv hdmimode " "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
-    eval "OPTION=\$(whiptail --title \"ODROID Configuration Tool\" \\
-            --backtitle \"$DEVICE\" \\
-            --radiolist \"Select the resolution.(using the space bar)\" \"$WT_HEIGHT\" \"$WT_WIDTH\" \"$WT_MENU_HEIGHT\" \\
-            --cancel-button Back \
-            --ok-button Select \
-            \"1 AUTO RESOLUTION\" \"Automatic resolution setting\" \"$([ "$AUTO_RESOLUTION" = "true" ] && echo "ON" || echo "OFF")\" \\
-            $(get_resolution)
-            3>&1 1>&2 2>&3)
-            BUTTON=\$?"
-    if [ $BUTTON -eq 1 ]; then
-        # Back
-        return 0
-    elif [ $BUTTON -eq 0 ]; then
-        # Select
-        OPTION=$(echo "$OPTION" | sed 's/.*[[:space:]]\(.*\)/\1/')
-        if [ "$OPTION" = "RESOLUTION" ]; then
-            if [ "$AUTO_RESOLUTION" = "false" ]; then
-                sed -i 's/^setenv display_autodetect \".*\"/setenv display_autodetect \"true\"/' "$BOOT_INI"
-                sed -i 's/^setenv hdmimode \".*\"/setenv hdmimode \"1080p60hz\"/' "$BOOT_INI"
-                ASK_TO_REBOOT=1
-                whiptail --msgbox "After rebooting, the resolution will be automatically set." 20 60
-            fi
-        else
-            if [ "$AUTO_RESOLUTION" = "true" ]; then
-                sed -i 's/^setenv display_autodetect \".*\"/setenv display_autodetect \"false\"/' "$BOOT_INI"
-                ASK_TO_REBOOT=1
-            fi
-            if [ "$CURRENT_RESOLUTION" != "$OPTION" ]; then
-                eval "sed -i 's/^setenv hdmimode \".*\"/setenv hdmimode \"$OPTION\"/' $BOOT_INI"
-                ASK_TO_REBOOT=1
-            fi
-            if [ $ASK_TO_REBOOT -eq 1 ]; then
-                whiptail --msgbox "After rebooting, the resolution will be set to $OPTION." 20 60
-            fi
-        fi
-    fi
-}
-
-###########################################################
-# ADVANCED OPTIONS
-###########################################################
-
-get_resolution()
-{
-    for i in $(seq "$(grep -c -e "^#.*|.*x.*Hz.*" "$BOOT_INI")"); do
-        READ_RESOLUTION=$(grep -e "^#.*|.*x.*Hz.*" "$BOOT_INI" | sed -n "$i"p)
-        RESOLUTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\1/')
-        RESOLUTION_DESCRIPTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\2/')
-        echo "\"$(( "$i" + 1 )) $RESOLUTION\"" \
+        echo "\"$(( i + 1 )) $RESOLUTION\"" \
         "\"$RESOLUTION_DESCRIPTION\"" \
         "\"$([ "$AUTO_RESOLUTION" = "true" ] && echo "OFF" || echo "$([ "$CURRENT_RESOLUTION" = "$RESOLUTION" ] && echo "ON" || echo "OFF")")\"" \
         "\\"
@@ -255,8 +196,8 @@ do_resolution()
     eval "OPTION=\$(whiptail --title \"ODROID Configuration Tool\" \\
             --backtitle \"$DEVICE\" \\
             --radiolist \"Select the serial(UART) interfaces to be enabled.(using the space bar)\" \"$WT_HEIGHT\" \"$WT_WIDTH\" \"$WT_MENU_HEIGHT\" \\
-            --cancel-button Back \
-            --ok-button Select \
+            --cancel-button Back \\
+            --ok-button Select \\
             $(get_resolution)
             3>&1 1>&2 2>&3)
             BUTTON=\$?"
