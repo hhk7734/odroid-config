@@ -39,6 +39,8 @@ case "$1" in
 EOF
         fi
 
+	chmod +x /usr/lib/odroid-config/odroid-config-settings.sh
+
         systemctl enable odroid-config-settings &&
         systemctl restart odroid-config-settings
         ;;
