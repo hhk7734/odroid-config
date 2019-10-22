@@ -9,7 +9,7 @@ Homepage: https://github.com/hhk7734/odroid-config
 
 Package: odroid-config
 Architecture: arm64 armhf
-Depends: build-essential, device-tree-compiler, whiptail
+Depends: ${misc:Depends}, ${shlibs:Depends}, device-tree-compiler, whiptail
 Description: Odroid configuration tool
  A simple configuration tool for common Odroid administrative tasks,
  currently supporting ODROID-XU4/ODROID-C1/ODROID-C2/ODROID-N2.
