@@ -33,7 +33,10 @@ calc_wt_size()
 ASK_TO_REBOOT=0
 calc_wt_size
 BOOT_INI=/media/boot/boot.ini
-CONFIG_SETTINGS=/usr/lib/odroid-config/odroid-config-settings.sh
+START_SCRIPT=/usr/lib/odroid-config/odroid-config-settings.sh
+CONFIG_VERSION=$(dpkg -s odroid-config 2>/dev/null | grep Version \
+                 | sed 's/Version: \([0-9|.]*\).*$/\1/')
+CONFIG_TITLE="ODROID Configuration Tool v$CONFIG_VERSION"
 # GLOBAL VARIABLES
 ###########################################################
 
@@ -65,9 +68,22 @@ case "$DEVICE" in
         ;;
 esac
 
-. /usr/lib/odroid-config/models/${MODEL}/functions
-
+readonly MODEL
 readonly DEVICE
+
+do_finish()
+{
+    if [ $ASK_TO_REBOOT -eq 1 ]; then
+        whiptail --yesno "Would you like to reboot now?" 20 60
+        BUTTON=$?
+        if [ $BUTTON -eq 0 ]; then
+            # Yes
+            sync
+            reboot
+        fi
+    fi
+    exit 0
+}
 
 exist_in_the_shell()
 {
@@ -84,37 +100,29 @@ exist_in()
     [ -n "$(find "$1" -name "$2" 2>/dev/null)" ]
 }
 
-do_finish()
-{
-    if [ $ASK_TO_REBOOT -eq 1 ]; then
-        whiptail --yesno "Would you like to reboot now?" 20 60
-        BUTTON=$?
-        if [ $BUTTON -eq 0 ]; then
-            # Yes
-            sync
-            reboot
-        fi
-    fi
-    exit 0
-}
-
-config_setting()
+do_set_in_start_script()
 {
     # $1 module, $2 enable or disable
-    local REMOVE=" -r "
+    REMOVE=" -r "
     if [ "$2" = "enable" ] || [ "$2" = "enabled" ]; then
         REMOVE=" "
     fi
 
     eval "modprobe$REMOVE$1"
-    if grep -q "^modprobe.*$1" "$CONFIG_SETTINGS"; then
-            sed -i "s/^modprobe.*$1/modprobe$REMOVE$1/" "$CONFIG_SETTINGS"
+    if grep -q "^modprobe.*$1" "$START_SCRIPT"; then
+            sed -i "s/^modprobe.*$1/modprobe$REMOVE$1/" "$START_SCRIPT"
     else
-        cat >> "$CONFIG_SETTINGS" << EOF
+        cat >> "$START_SCRIPT" << EOF
 modprobe$REMOVE$1
 EOF
     fi
 }
+
+###########################################################
+# CALL MODEL-SPECIFIC FUNCTIONS
+###########################################################
+
+. /usr/lib/odroid-config/models/${MODEL}/functions
 
 ###########################################################
 # CHANGE USER PASSWORD
@@ -202,7 +210,7 @@ EOF
 
 do_boot_options()
 {
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Boot Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
@@ -244,7 +252,7 @@ do_change_keyboard_layout()
 
 do_localization_options()
 {
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Localization Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
@@ -333,7 +341,7 @@ fi
 
 do_interfacing_options()
 {
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Interfacing Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
@@ -376,7 +384,7 @@ fi
 
 do_advanced_options()
 {
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Advanced Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
@@ -471,7 +479,7 @@ EOF
 
 do_laboratory()
 {
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Back \
@@ -504,13 +512,18 @@ do_update()
     whiptail --yesno "Would you like to update odroid-config?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
-        if ! exist_in "/etc/apt/sources.list.d/" "hardkernel-ubuntu-ppa*"; then
-            add-apt-repository ppa:hardkernel/ppa
-        fi
         apt update
-        apt install -y odroid-config &&
-        whiptail --msgbox "The odroid-config has been updated." 20 60 &&
-        do_finish
+
+        UPDATE=$(apt list -a odroid-config 2>/dev/null | grep "upgradable to" \
+                | sed 's/.*upgradable to: \([0-9|.]*\).*$/\1/')
+
+        if [ "x${UPDATE}" = "x" ]; then
+            whiptail --msgbox "This is an latest version. v${CONFIG_VERSION}" 20 60
+        else
+            apt install -y odroid-config &&
+            whiptail --msgbox "The odroid-config has been updated." 20 60 &&
+            do_finish
+        fi
     fi
 }
 
@@ -519,7 +532,7 @@ do_update()
 ###########################################################
 
 while true; do
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Setup Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         --cancel-button Finish \

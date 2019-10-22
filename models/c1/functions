@@ -11,14 +11,14 @@ do_spi()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            config_setting spidev enable
-            config_setting spicc enable
+            do_set_in_start_script spidev enable
+            do_set_in_start_script spicc enable
             whiptail --msgbox "The SPI interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            config_setting spidev disalbe
-            config_setting spicc disable
+            do_set_in_start_script spidev disalbe
+            do_set_in_start_script spicc disable
             whiptail --msgbox "The SPI interface is disabled." 20 60
         fi
     fi
@@ -36,12 +36,12 @@ do_i2c()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            config_setting aml_i2c enable
+            do_set_in_start_script aml_i2c enable
             whiptail --msgbox "The I2C interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            config_setting aml_i2c disalbe
+            do_set_in_start_script aml_i2c disalbe
             whiptail --msgbox "The I2C interface is disabled." 20 60
         fi
     fi
@@ -58,14 +58,14 @@ do_onewire()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            config_setting w1-gpio enable
-            config_setting w1-therm enable
+            do_set_in_start_script w1-gpio enable
+            do_set_in_start_script w1-therm enable
             whiptail --msgbox "The I2C interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            config_setting w1-gpio disable
-            config_setting w1-therm disable
+            do_set_in_start_script w1-gpio disable
+            do_set_in_start_script w1-therm disable
             whiptail --msgbox "The I2C interface is disabled." 20 60
         fi
     fi

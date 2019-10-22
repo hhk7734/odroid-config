@@ -1,4 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: odroid-config
 Source: https://github.com/hhk7734/odroid-config
 
 Files: *
