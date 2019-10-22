@@ -3,7 +3,7 @@
 do_spi()
 {
     DEFAULT=--defaultno
-    if [ -e /dev/spidev1* ]; then
+    if exist_in "/dev/" "spidev1*"; then
         DEFAULT=
     fi
 
