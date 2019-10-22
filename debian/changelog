@@ -1,8 +1,9 @@
-odroid-config (0.2.3) UNRELEASED; urgency=medium
+odroid-config (0.2.3) unstable; urgency=medium
 
   * Correct debian package using debmake
+  * Add version-check to do_update()
 
- -- Hyeonki Hong <hhk7734@gmail.com>  Tue, 22 Oct 2019 12:24:18 +0900
+ -- Hyeonki Hong <hhk7734@gmail.com>  Tue, 22 Oct 2019 16:03:06 +0900
 
 odroid-config (0.2.2) unstable; urgency=medium
 

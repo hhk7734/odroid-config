@@ -42,7 +42,7 @@ do_i2c()
         I2C_3=ON
     fi
 
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --checklist "Select the I2C interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
         "1 /dev/i2c-2" "Enable/Disable the I2C-2 interface." "$I2C_2"\
@@ -101,7 +101,7 @@ do_serial()
         SERIAL_2=ON
     fi
 
-    OPTION=$(whiptail --title "ODROID Configuration Tool" \
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --checklist "Select the serial(UART) interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
         "1 /dev/ttyS1" "Enable/Disable the serial1 interface." "$SERIAL_1"\
@@ -193,7 +193,7 @@ do_resolution()
 {
     AUTO_RESOLUTION=$(grep -e "^setenv display_autodetect" "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
     CURRENT_RESOLUTION=$(grep -e "^setenv hdmimode " "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
-    eval "OPTION=\$(whiptail --title \"ODROID Configuration Tool\" \\
+    eval "OPTION=\$(whiptail --title \"$CONFIG_TITLE\" \\
             --backtitle \"$DEVICE\" \\
             --radiolist \"Select the resolution.(using the space bar)\" \"$WT_HEIGHT\" \"$WT_WIDTH\" \"$WT_MENU_HEIGHT\" \\
             --cancel-button Back \\
