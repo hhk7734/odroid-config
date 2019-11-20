@@ -518,7 +518,7 @@ do_update()
                 | sed 's/.*upgradable to: \([0-9|.]*\).*$/\1/')
 
         if [ "x${UPDATE}" = "x" ]; then
-            whiptail --msgbox "This is an latest version. v${CONFIG_VERSION}" 20 60
+            whiptail --msgbox "This is the latest version. v${CONFIG_VERSION}" 20 60
         else
             apt install -y odroid-config &&
             whiptail --msgbox "The odroid-config has been updated." 20 60 &&
