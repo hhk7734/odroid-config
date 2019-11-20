@@ -24,6 +24,65 @@ do_spi()
     fi
 }
 
+do_i2c()
+{
+    I2C_1=OFF
+    if [ -e /dev/i2c-1 ]; then
+        I2C_1=ON
+    fi
+
+    I2C_5=OFF
+    if [ -e /dev/i2c-5 ]; then
+        I2C_5=ON
+    fi
+
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
+        --backtitle "$DEVICE" \
+        --checklist "Select the I2C interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
+        "1 /dev/i2c-1" "Enable/Disable the I2C-1 interface." "$I2C_1"\
+        "2 /dev/i2c-5" "Enable/Disable the I2C-5 interface." "$I2C_5"\
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Cancel
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Ok
+        CHANGE=1
+        case "$OPTION" in
+            *i2c-1*i2c-5*)
+                if [ "$I2C_1" != ON ] || [ "$I2C_5" != ON ]; then
+                    I2C_1=ON && I2C_5=ON && CHANGE=0
+                fi
+                ;;
+            *i2c-1*)
+                if [ "$I2C_1" != ON ] || [ "$I2C_5" != OFF ]; then
+                    I2C_1=ON && I2C_5=OFF && CHANGE=0
+                fi
+                ;;
+            *i2c-5*)
+                if [ "$I2C_1" != OFF ] || [ "$I2C_5" != ON ]; then
+                    I2C_1=OFF && I2C_5=ON && CHANGE=0
+                fi
+                ;;
+            "")
+                if [ "$I2C_1" != OFF ] || [ "$I2C_5" != OFF ]; then
+                    I2C_1=OFF && I2C_5=OFF && CHANGE=0
+                fi
+                ;;
+            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
+
+        if [ "$CHANGE" -eq 0 ]; then
+            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/i2c@12C70000 status "$([ "$I2C_1" = ON ] && echo okay || echo disabled)"
+            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/i2c@12cb0000 status "$([ "$I2C_5" = ON ] && echo okay || echo disabled)"
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the I2C-1 interface will be $([ "$I2C_1" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the I2C-5 interface will be $([ "$I2C_5" = ON ] && echo enabled || echo disabled)." 20 60
+        fi
+    fi
+}
+
 do_onewire()
 {
     DEFAULT=--defaultno
