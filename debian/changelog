@@ -1,3 +1,9 @@
+odroid-config (0.2.4) unstable; urgency=medium
+
+  * Add i2c interfacing option for xu4
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Wed, 20 Nov 2019 11:23:43 +0900
+
 odroid-config (0.2.3) unstable; urgency=medium
 
   * Correct debian package using debmake
