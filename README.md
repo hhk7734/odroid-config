@@ -3,15 +3,15 @@
 ## Installation
 
 ```bash
-$ sudo apt update
-$ sudo apt install software-properties-common
-$ sudo add-apt-repository ppa:hardkernel/ppa
-$ sudo apt update
-$ sudo apt install odroid-config
+sudo add-apt-repository -y ppa:hardkernel/ppa &&\
+sudo apt update &&\
+sudo apt install -y odroid-config
 ```
 
 ## Usage
 
 ```bash
-$ sudo odroid-config
+sudo odroid-config
 ```
+
+![odroid-config](./odroid-config.png)
