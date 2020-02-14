@@ -33,7 +33,6 @@ calc_wt_size()
 ASK_TO_REBOOT=0
 calc_wt_size
 BOOT_INI=/media/boot/boot.ini
-START_SCRIPT=/usr/lib/odroid-config/odroid-config-settings.sh
 CONFIG_VERSION=$(dpkg -s odroid-config 2>/dev/null | grep Version \
                  | sed 's/Version: \([0-9|.]*\).*$/\1/')
 CONFIG_TITLE="ODROID Configuration Tool v$CONFIG_VERSION"
@@ -100,28 +99,27 @@ exist_in()
     [ -n "$(find "$1" -name "$2" 2>/dev/null)" ]
 }
 
-do_set_in_start_script()
-{
-    # $1 module, $2 enable or disable
-    REMOVE=" -r "
-    if [ "$2" = "enable" ] || [ "$2" = "enabled" ]; then
-        REMOVE=" "
-    fi
+loadModule() {
+    # remove $1 from /etc/modules
+    sed -e ':a' -e 'N' -e '$!ba' -e "s/\n$1//g" -i /etc/modules
+    # add $1 into /etc/modules
+    echo "$1" | tee -a /etc/modules
+    # load module
+    modprobe "$1"
+}
 
-    eval "modprobe$REMOVE$1"
-    if grep -q "^modprobe.*$1" "$START_SCRIPT"; then
-            sed -i "s/^modprobe.*$1/modprobe$REMOVE$1/" "$START_SCRIPT"
-    else
-        cat >> "$START_SCRIPT" << EOF
-modprobe$REMOVE$1
-EOF
-    fi
+unLoadModule() {
+    # remove $1 from /etc/modules
+    sed -e ':a' -e 'N' -e '$!ba' -e "s/\n$1//g" -i /etc/modules
+    # unload module
+    modprobe -r "$1"
 }
 
 ###########################################################
 # CALL MODEL-SPECIFIC FUNCTIONS
 ###########################################################
 
+# shellcheck source=/dev/null
 . /usr/lib/odroid-config/models/${MODEL}/functions
 
 ###########################################################

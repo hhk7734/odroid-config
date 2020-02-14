@@ -30,18 +30,6 @@ case "$1" in
         DIRECTORY="/usr/lib/odroid-config/models/"
 
         find "$DIRECTORY" -depth ! -path "$DIRECTORY" -type d ! -name "${MODEL}" -exec rm -r {} \;
-
-        if ! [ -e /usr/lib/odroid-config/odroid-config-settings.sh ]; then
-            cat > /usr/lib/odroid-config/odroid-config-settings.sh << EOF
-#!/bin/sh
-
-EOF
-        fi
-
-        chmod +x /usr/lib/odroid-config/odroid-config-settings.sh
-
-        systemctl enable odroid-config-settings &&
-        systemctl restart odroid-config-settings
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

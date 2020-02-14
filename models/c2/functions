@@ -11,16 +11,16 @@ do_spi()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            do_set_in_start_script spidev enable
-            do_set_in_start_script spi_gpio enable
-            do_set_in_start_script spi_bitbang enable
+            loadModule spidev
+            loadModule spi_gpio
+            loadModule spi_bitbang
             whiptail --msgbox "The SPI interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            do_set_in_start_script spidev disalbe
-            do_set_in_start_script spi_gpio disable
-            do_set_in_start_script spi_bitbang disable
+            unLoadModule spidev
+            unLoadModule spi_gpio
+            unLoadModule spi_bitbang
             whiptail --msgbox "The SPI interface is disabled." 20 60
         fi
     fi
@@ -37,12 +37,12 @@ do_i2c()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            do_set_in_start_script aml_i2c enable
+            loadModule aml_i2c
             whiptail --msgbox "The I2C interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            do_set_in_start_script aml_i2c disalbe
+            unLoadModule aml_i2c
             whiptail --msgbox "The I2C interface is disabled." 20 60
         fi
     fi
@@ -59,14 +59,14 @@ do_onewire()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            do_set_in_start_script w1-gpio enable
-            do_set_in_start_script w1-therm enable
+            loadModule w1-gpio
+            loadModule w1-therm
             whiptail --msgbox "The I2C interface is enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            do_set_in_start_script w1-gpio disable
-            do_set_in_start_script w1-therm disable
+            unLoadModule w1-gpio
+            unLoadModule w1-therm
             whiptail --msgbox "The I2C interface is disabled." 20 60
         fi
     fi
