@@ -69,8 +69,8 @@ calc_wt_size() {
 ASK_TO_REBOOT=0
 calc_wt_size
 BOOT_INI=/media/boot/boot.ini
-CONFIG_VERSION=$(dpkg -s odroid-config 2>/dev/null | grep Version |
-    sed 's/Version: \([0-9|.]*\).*$/\1/')
+CONFIG_VERSION=$(head -n 1 "/usr/lib/odroid-config/debian/changelog" |
+    sed 's/.* .\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
 CONFIG_TITLE="ODROID Configuration Tool v$CONFIG_VERSION"
 # GLOBAL VARIABLES
 ###########################################################
@@ -517,20 +517,43 @@ do_laboratory() {
 ###########################################################
 
 do_update() {
-    whiptail --yesno "Would you like to update odroid-config?" $DEFAULT 20 60
-    BUTTON=$?
-    if [ $BUTTON -eq 0 ]; then
-        apt update
+    if ! is_installed git; then
+        apt install -y git
+    fi
 
-        UPDATE=$(apt list -a odroid-config 2>/dev/null | grep "upgradable to" |
-            sed 's/.*upgradable to: \([0-9|.]*\).*$/\1/')
+    UPDATE_VERSION=$(git ls-remote --tags --refs \
+        "https://github.com/hhk7734/odroid-config.git" 2>/dev/null |
+        sed 's/.*v\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/' |
+        sort -V | tail -n 1)
 
-        if [ "x${UPDATE}" = "x" ]; then
-            whiptail --msgbox "This is the latest version. v${CONFIG_VERSION}" 20 60
-        else
-            apt install -y odroid-config &&
+    if [ -z "${UPDATE_VERSION}" ]; then
+        whiptail --msgbox \
+            "Check your internet connection." 20 60
+        return 1
+    fi
+
+    if [ "${CONFIG_VERSION}" = "${UPDATE_VERSION}" ]; then
+        whiptail --msgbox \
+            "This is the latest version. v${CONFIG_VERSION}" 20 60
+    else
+        whiptail --yesno "Would you like to update version from \
+v${CONFIG_VERSION} to v${UPDATE_VERSION}?" 20 60
+        BUTTON=$?
+
+        if [ $BUTTON -eq 0 ]; then
+            if [ -n "${UPDATE_VERSION}" ]; then
+                install -m 0755 -d /tmp/odroid_clone
+                CLONE_PATH="/tmp/odroid_clone/odroid-config"
+                git clone "https://github.com/hhk7734/odroid-config.git" \
+                    "${CLONE_PATH}"
+                make -C "${CLONE_PATH}" uninstall
+                make -C "${CLONE_PATH}"
+                make -C "${CLONE_PATH}" install
+                rm -rf "/tmp/odroid_clone"
+
                 whiptail --msgbox "The odroid-config has been updated." 20 60 &&
-                do_finish
+                    do_finish
+            fi
         fi
     fi
 }
