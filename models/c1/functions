@@ -1,7 +1,6 @@
 #!/bin/sh
 
-do_spi()
-{
+do_spi() {
     DEFAULT=--defaultno
     if exist_in "/dev/" "spidev*"; then
         DEFAULT=
@@ -24,9 +23,7 @@ do_spi()
     fi
 }
 
-
-do_i2c()
-{
+do_i2c() {
     DEFAULT=--defaultno
     if exist_in "/dev/" "i2c*"; then
         DEFAULT=
@@ -47,8 +44,7 @@ do_i2c()
     fi
 }
 
-do_onewire()
-{
+do_onewire() {
     DEFAULT=--defaultno
     if exist_in "/sys/bus/w1/devices/" "w1_bus*"; then
         DEFAULT=

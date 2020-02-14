@@ -1,7 +1,6 @@
 #!/bin/sh
 
-do_spi()
-{
+do_spi() {
     DEFAULT=--defaultno
     if exist_in "/dev/" "spidev1*"; then
         DEFAULT=
@@ -24,8 +23,7 @@ do_spi()
     fi
 }
 
-do_i2c()
-{
+do_i2c() {
     I2C_1=OFF
     if [ -e /dev/i2c-1 ]; then
         I2C_1=ON
@@ -39,8 +37,8 @@ do_i2c()
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --checklist "Select the I2C interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
-        "1 /dev/i2c-1" "Enable/Disable the I2C-1 interface." "$I2C_1"\
-        "2 /dev/i2c-5" "Enable/Disable the I2C-5 interface." "$I2C_5"\
+        "1 /dev/i2c-1" "Enable/Disable the I2C-1 interface." "$I2C_1" \
+        "2 /dev/i2c-5" "Enable/Disable the I2C-5 interface." "$I2C_5" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -50,27 +48,27 @@ do_i2c()
         # Ok
         CHANGE=1
         case "$OPTION" in
-            *i2c-1*i2c-5*)
-                if [ "$I2C_1" != ON ] || [ "$I2C_5" != ON ]; then
-                    I2C_1=ON && I2C_5=ON && CHANGE=0
-                fi
-                ;;
-            *i2c-1*)
-                if [ "$I2C_1" != ON ] || [ "$I2C_5" != OFF ]; then
-                    I2C_1=ON && I2C_5=OFF && CHANGE=0
-                fi
-                ;;
-            *i2c-5*)
-                if [ "$I2C_1" != OFF ] || [ "$I2C_5" != ON ]; then
-                    I2C_1=OFF && I2C_5=ON && CHANGE=0
-                fi
-                ;;
-            "")
-                if [ "$I2C_1" != OFF ] || [ "$I2C_5" != OFF ]; then
-                    I2C_1=OFF && I2C_5=OFF && CHANGE=0
-                fi
-                ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        *i2c-1*i2c-5*)
+            if [ "$I2C_1" != ON ] || [ "$I2C_5" != ON ]; then
+                I2C_1=ON && I2C_5=ON && CHANGE=0
+            fi
+            ;;
+        *i2c-1*)
+            if [ "$I2C_1" != ON ] || [ "$I2C_5" != OFF ]; then
+                I2C_1=ON && I2C_5=OFF && CHANGE=0
+            fi
+            ;;
+        *i2c-5*)
+            if [ "$I2C_1" != OFF ] || [ "$I2C_5" != ON ]; then
+                I2C_1=OFF && I2C_5=ON && CHANGE=0
+            fi
+            ;;
+        "")
+            if [ "$I2C_1" != OFF ] || [ "$I2C_5" != OFF ]; then
+                I2C_1=OFF && I2C_5=OFF && CHANGE=0
+            fi
+            ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
 
         if [ "$CHANGE" -eq 0 ]; then
@@ -83,8 +81,7 @@ After rebooting, the I2C-5 interface will be $([ "$I2C_5" = ON ] && echo enabled
     fi
 }
 
-do_onewire()
-{
+do_onewire() {
     DEFAULT=--defaultno
     if lsmod | grep -q w1_; then
         DEFAULT=

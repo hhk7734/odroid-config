@@ -9,10 +9,9 @@ if [ "x${SUDO_USER}" = "x" ]; then
     export SUDO_USER=root
 fi
 
-calc_wt_size()
-{
-    # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
-    # output from tput. However in this case, tput detects neither stdout or 
+calc_wt_size() {
+    # NOTE: it's tempting to redirect stderr to /dev/null, so supress error
+    # output from tput. However in this case, tput detects neither stdout or
     # stderr is a tty and so only gives default 80, 24 values
 
     WT_HEIGHT=17
@@ -25,7 +24,7 @@ calc_wt_size()
         WT_WIDTH=120
     fi
 
-    WT_MENU_HEIGHT=$((WT_HEIGHT-7))
+    WT_MENU_HEIGHT=$((WT_HEIGHT - 7))
 }
 
 ###########################################################
@@ -33,45 +32,44 @@ calc_wt_size()
 ASK_TO_REBOOT=0
 calc_wt_size
 BOOT_INI=/media/boot/boot.ini
-CONFIG_VERSION=$(dpkg -s odroid-config 2>/dev/null | grep Version \
-                 | sed 's/Version: \([0-9|.]*\).*$/\1/')
+CONFIG_VERSION=$(dpkg -s odroid-config 2>/dev/null | grep Version |
+    sed 's/Version: \([0-9|.]*\).*$/\1/')
 CONFIG_TITLE="ODROID Configuration Tool v$CONFIG_VERSION"
 # GLOBAL VARIABLES
 ###########################################################
 
 [ "x${DEVICE}" = "x" ] && DEVICE="$(cat /proc/device-tree/model)"
 case "$DEVICE" in
-    "AMLOGIC")
-        MODEL=c1
-        DEVICE="Hardkernel ODROID C0/C1+"
-        ;;
-    "ODROID-C2")
-        MODEL=c2
-        DEVICE="Hardkernel ODROID C2"
-        ;;
-    "Hardkernel ODROID-N2")
-        MODEL=n2
-        DEVICE="Hardkernel ODROID N2"
-        ;;
-    "Hardkernel Odroid XU4")
-        MODEL=xu4
-        DEVICE="Hardkernel ODROID XU4"
-        ;;
-    *)
-        whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
-        if [ $? -eq 1 ]; then
-            # No
-            exit 1
-        fi
-        DEVICE="Unsupported device"
-        ;;
+"AMLOGIC")
+    MODEL=c1
+    DEVICE="Hardkernel ODROID C0/C1+"
+    ;;
+"ODROID-C2")
+    MODEL=c2
+    DEVICE="Hardkernel ODROID C2"
+    ;;
+"Hardkernel ODROID-N2")
+    MODEL=n2
+    DEVICE="Hardkernel ODROID N2"
+    ;;
+"Hardkernel Odroid XU4")
+    MODEL=xu4
+    DEVICE="Hardkernel ODROID XU4"
+    ;;
+*)
+    whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
+    if [ $? -eq 1 ]; then
+        # No
+        exit 1
+    fi
+    DEVICE="Unsupported device"
+    ;;
 esac
 
 readonly MODEL
 readonly DEVICE
 
-do_finish()
-{
+do_finish() {
     if [ $ASK_TO_REBOOT -eq 1 ]; then
         whiptail --yesno "Would you like to reboot now?" 20 60
         BUTTON=$?
@@ -84,18 +82,15 @@ do_finish()
     exit 0
 }
 
-exist_in_the_shell()
-{
+exist_in_the_shell() {
     command -V "$1" 2>/dev/null | grep -q shell
 }
 
-is_installed()
-{
+is_installed() {
     [ -n "$(command -v "$1" 2>/dev/null)" ]
 }
 
-exist_in()
-{
+exist_in() {
     [ -n "$(find "$1" -name "$2" 2>/dev/null)" ]
 }
 
@@ -126,37 +121,34 @@ unLoadModule() {
 # CHANGE USER PASSWORD
 ###########################################################
 
-do_change_user_password()
-{
+do_change_user_password() {
     whiptail --msgbox "You will now be asked to enter a new password for the $SUDO_USER user" 20 60
     passwd "$SUDO_USER" &&
-    whiptail --msgbox "Password changed successfully" 20 60
+        whiptail --msgbox "Password changed successfully" 20 60
 }
 
 ###########################################################
 # BOOT OPTIONS
 ###########################################################
 
-do_console()
-{
-     # Console
+do_console() {
+    # Console
     systemctl set-default multi-user.target
     ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
-    if [ -e /etc/systemd/system/getty@tty1.service.d/autologin.conf ];then
+    if [ -e /etc/systemd/system/getty@tty1.service.d/autologin.conf ]; then
         rm /etc/systemd/system/getty@tty1.service.d/autologin.conf
     fi
     ASK_TO_REBOOT=1
 }
 
-do_console_autologin()
-{
+do_console_autologin() {
     # Console Autologin
     systemctl set-default multi-user.target
     ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
     if [ ! -e /etc/systemd/system/getty@tty1.service.d ]; then
         mkdir -p /etc/systemd/system/getty@tty1.service.d
     fi
-    cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+    cat >/etc/systemd/system/getty@tty1.service.d/autologin.conf <<EOF
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --autologin $SUDO_USER --noclear %I \$TERM
@@ -164,14 +156,13 @@ EOF
     ASK_TO_REBOOT=1
 }
 
-do_desktop()
-{
+do_desktop() {
     # Desktop
     if [ -e /etc/init.d/lightdm ]; then
         systemctl set-default graphical.target
 
         if [ ! -e /etc/lightdm/lightdm.conf ]; then
-            cat > /etc/lightdm/lightdm.conf << EOF
+            cat >/etc/lightdm/lightdm.conf <<EOF
 [SeatDefaults]
 autologin-user=
 autologin-user-timeout=0
@@ -185,14 +176,13 @@ EOF
     fi
 }
 
-do_desktop_autologin()
-{
+do_desktop_autologin() {
     # Desktop Autologin
     if [ -e /etc/init.d/lightdm ]; then
         systemctl set-default graphical.target
 
         if [ ! -e /etc/lightdm/lightdm.conf ]; then
-            cat > /etc/lightdm/lightdm.conf << EOF
+            cat >/etc/lightdm/lightdm.conf <<EOF
 [SeatDefaults]
 autologin-user=
 autologin-user-timeout=0
@@ -206,8 +196,7 @@ EOF
     fi
 }
 
-do_boot_options()
-{
+do_boot_options() {
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Boot Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
@@ -225,11 +214,11 @@ do_boot_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            1*) do_console ;;
-            2*) do_console_autologin ;;
-            3*) do_desktop ;;
-            4*) do_desktop_autologin ;;
-            *) whiptail --msgbox "Programmer error, unrecognised boot option" 20 60 ;;
+        1*) do_console ;;
+        2*) do_console_autologin ;;
+        3*) do_desktop ;;
+        4*) do_desktop_autologin ;;
+        *) whiptail --msgbox "Programmer error, unrecognised boot option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
@@ -238,8 +227,7 @@ do_boot_options()
 # LOCALIZATION OPTIONS
 ###########################################################
 
-do_change_keyboard_layout()
-{
+do_change_keyboard_layout() {
     printf "Reloading keymap. This may take a short while\n"
     dpkg-reconfigure keyboard-configuration
     invoke-rc.d keyboard-setup start
@@ -248,8 +236,7 @@ do_change_keyboard_layout()
     return 0
 }
 
-do_localization_options()
-{
+do_localization_options() {
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Localization Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
@@ -266,10 +253,10 @@ do_localization_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            1\ *) dpkg-reconfigure locales ;;
-            2\ *) dpkg-reconfigure tzdata ;;
-            3\ *) do_change_keyboard_layout ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        1\ *) dpkg-reconfigure locales ;;
+        2\ *) dpkg-reconfigure tzdata ;;
+        3\ *) do_change_keyboard_layout ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
@@ -278,8 +265,7 @@ do_localization_options()
 # INTERFACING OPTIONS
 ###########################################################
 
-do_ssh()
-{
+do_ssh() {
     if [ -e /var/log/regen_ssh_keys.log ] && ! grep -q "^finished" /var/log/regen_ssh_keys.log; then
         whiptail --msgbox "Initial ssh key generation still running. Please wait and try again." 20 60
         return 1
@@ -294,51 +280,45 @@ do_ssh()
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         ssh-keygen -A &&
-        update-rc.d ssh enable &&
-        invoke-rc.d ssh start &&
-        whiptail --msgbox "The SSH server is enabled" 20 60
+            update-rc.d ssh enable &&
+            invoke-rc.d ssh start &&
+            whiptail --msgbox "The SSH server is enabled" 20 60
     elif [ $BUTTON -eq 1 ]; then
         update-rc.d ssh disable &&
-        invoke-rc.d ssh stop &&
-        whiptail --msgbox "The SSH server is disabled" 20 60
+            invoke-rc.d ssh stop &&
+            whiptail --msgbox "The SSH server is disabled" 20 60
     fi
 }
 
-do_vnc()
-{
+do_vnc() {
     whiptail --msgbox "This option is not supported." 20 60
 }
 
 if ! exist_in_the_shell do_spi; then
-    do_spi()
-    {
+    do_spi() {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if ! exist_in_the_shell do_i2c; then
-    do_i2c()
-    {
+    do_i2c() {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if ! exist_in_the_shell do_serial; then
-    do_serial()
-    {
+    do_serial() {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
 if ! exist_in_the_shell do_onewire; then
-    do_onewire()
-    {
+    do_onewire() {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-do_interfacing_options()
-{
+do_interfacing_options() {
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Interfacing Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
@@ -358,13 +338,13 @@ do_interfacing_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            1\ *) do_ssh ;;
-            2\ *) do_vnc ;;
-            3\ *) do_spi ;;
-            4\ *) do_i2c ;;
-            5\ *) do_serial ;;
-            6\ *) do_onewire ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        1\ *) do_ssh ;;
+        2\ *) do_vnc ;;
+        3\ *) do_spi ;;
+        4\ *) do_i2c ;;
+        5\ *) do_serial ;;
+        6\ *) do_onewire ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
@@ -374,14 +354,12 @@ do_interfacing_options()
 ###########################################################
 
 if ! exist_in_the_shell do_resolution; then
-    do_resolution()
-    {
+    do_resolution() {
         whiptail --msgbox "This option is not supported." 20 60
     }
 fi
 
-do_advanced_options()
-{
+do_advanced_options() {
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Advanced Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
@@ -396,8 +374,8 @@ do_advanced_options()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            1\ *) do_resolution ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        1\ *) do_resolution ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
@@ -406,8 +384,7 @@ do_advanced_options()
 # LAB
 ###########################################################
 
-do_daily_apt_update()
-{
+do_daily_apt_update() {
     DEFAULT=--defaultno
     if [ "$(systemctl is-enabled apt-daily.timer)" = "enabled" ]; then
         DEFAULT=
@@ -434,8 +411,7 @@ do_daily_apt_update()
     fi
 }
 
-do_wiringpi_installation()
-{
+do_wiringpi_installation() {
     whiptail --yesno "Would you like to install wiringPi?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
@@ -447,21 +423,20 @@ do_wiringpi_installation()
             rm -r /tmp/wiringPi
         fi
         git clone https://github.com/hardkernel/wiringPi /tmp/wiringPi &&
-        cd /tmp/wiringPi &&
-        ./build &&
-        whiptail --msgbox "The wiringPi for Odroid has been installed." 20 60
+            cd /tmp/wiringPi &&
+            ./build &&
+            whiptail --msgbox "The wiringPi for Odroid has been installed." 20 60
     fi
 }
 
-do_samba_server_installation()
-{
+do_samba_server_installation() {
     whiptail --yesno "Would you like to install Samba server?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         # Yes
         apt install -y samba &&
-        smbpasswd -a "$SUDO_USER" &&
-        cat > /etc/samba/smb.conf << EOF
+            smbpasswd -a "$SUDO_USER" &&
+            cat >/etc/samba/smb.conf <<EOF
 [$SUDO_USER]
 comment = $SUDO_USER
 path = $HOME
@@ -471,12 +446,11 @@ create mask = 0644
 directory mask = 0755
 EOF
         systemctl restart smbd &&
-        whiptail --msgbox "The Samba server has been installed.\n\nAvailable access path: $HOME\nValid user: $SUDO_USER" 20 60
+            whiptail --msgbox "The Samba server has been installed.\n\nAvailable access path: $HOME\nValid user: $SUDO_USER" 20 60
     fi
 }
 
-do_laboratory()
-{
+do_laboratory() {
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --menu "Laboratory" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
@@ -493,10 +467,10 @@ do_laboratory()
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case "$OPTION" in
-            1\ *) do_daily_apt_update ;;
-            2\ *) do_wiringpi_installation ;;
-            3\ *) do_samba_server_installation ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        1\ *) do_daily_apt_update ;;
+        2\ *) do_wiringpi_installation ;;
+        3\ *) do_samba_server_installation ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     fi
 }
@@ -505,22 +479,21 @@ do_laboratory()
 # UPDATE
 ###########################################################
 
-do_update()
-{
+do_update() {
     whiptail --yesno "Would you like to update odroid-config?" $DEFAULT 20 60
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         apt update
 
-        UPDATE=$(apt list -a odroid-config 2>/dev/null | grep "upgradable to" \
-                | sed 's/.*upgradable to: \([0-9|.]*\).*$/\1/')
+        UPDATE=$(apt list -a odroid-config 2>/dev/null | grep "upgradable to" |
+            sed 's/.*upgradable to: \([0-9|.]*\).*$/\1/')
 
         if [ "x${UPDATE}" = "x" ]; then
             whiptail --msgbox "This is the latest version. v${CONFIG_VERSION}" 20 60
         else
             apt install -y odroid-config &&
-            whiptail --msgbox "The odroid-config has been updated." 20 60 &&
-            do_finish
+                whiptail --msgbox "The odroid-config has been updated." 20 60 &&
+                do_finish
         fi
     fi
 }
@@ -551,15 +524,15 @@ while true; do
     elif [ $BUTTON -eq 0 ]; then
         # Select
         case $OPTION in
-            1\ *) do_change_user_password ;;
-            2\ *) nmtui ;;
-            3\ *) do_boot_options ;;
-            4\ *) do_localization_options ;;
-            5\ *) do_interfacing_options ;;
-            6\ *) do_advanced_options ;;
-            7\ *) do_update ;;
-            99\ *) do_laboratory ;;
-            *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        1\ *) do_change_user_password ;;
+        2\ *) nmtui ;;
+        3\ *) do_boot_options ;;
+        4\ *) do_localization_options ;;
+        5\ *) do_interfacing_options ;;
+        6\ *) do_advanced_options ;;
+        7\ *) do_update ;;
+        99\ *) do_laboratory ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
     else
         exit 1
