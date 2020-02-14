@@ -1,3 +1,12 @@
+odroid-config (0.2.5) unstable; urgency=medium
+
+  * Create Makefile
+  * Use /etc/modules instead of odroid-config-settings
+  * Use shell-format
+  * Add text color
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Fri, 14 Feb 2020 17:00:37 +0900
+
 odroid-config (0.2.4) unstable; urgency=medium
 
   * Add i2c interfacing option for xu4
