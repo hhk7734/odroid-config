@@ -1,3 +1,7 @@
+![license](https://img.shields.io/github/license/hhk7734/odroid-config)
+![version](https://img.shields.io/github/v/tag/hhk7734/odroid-config?sort=semver)
+![language](https://img.shields.io/github/languages/top/hhk7734/odroid-config)
+
 # odroid-config
 
 ## Installation
