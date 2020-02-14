@@ -1,3 +1,0 @@
-models                          /usr/lib/odroid-config
-odroid-config                   /usr/bin
-odroid-config-settings.service  /etc/systemd/system
