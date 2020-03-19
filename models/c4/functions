@@ -1,0 +1,229 @@
+#!/bin/sh
+
+DTB_PATH=/media/boot/meson64_odroidc4.dtb
+BOOT_INI=/media/boot/boot.ini
+
+###########################################################
+# INTERFACING OPTIONS
+###########################################################
+
+do_spi() {
+    DEFAULT=--defaultno
+    if exist_in "/dev/" "spidev0*"; then
+        DEFAULT=
+    fi
+
+    whiptail --yesno "Would you like the SPI interface to be enabled?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        if [ -n "$DEFAULT" ]; then
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000 status okay
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000/spidev@0 status okay
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the SPI interface will be enabled." 20 60
+        fi
+    elif [ $BUTTON -eq 1 ]; then
+        if [ -z "$DEFAULT" ]; then
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000 status disabled
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000/spidev@0 status disabled
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the SPI interface will be disabled." 20 60
+        fi
+    fi
+}
+
+do_i2c() {
+    I2C_2=OFF
+    if [ -e /dev/i2c-2 ]; then
+        I2C_2=ON
+    fi
+
+    I2C_3=OFF
+    if [ -e /dev/i2c-3 ]; then
+        I2C_3=ON
+    fi
+
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
+        --backtitle "$DEVICE" \
+        --checklist "Select the I2C interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
+        "1 /dev/i2c-2" "Enable/Disable the I2C-2 interface." "$I2C_2" \
+        "2 /dev/i2c-3" "Enable/Disable the I2C-3 interface." "$I2C_3" \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Cancel
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Ok
+        CHANGE=1
+        case "$OPTION" in
+        *i2c-2*i2c-3*)
+            if [ "$I2C_2" != ON ] || [ "$I2C_3" != ON ]; then
+                I2C_2=ON && I2C_3=ON && CHANGE=0
+            fi
+            ;;
+        *i2c-2*)
+            if [ "$I2C_2" != ON ] || [ "$I2C_3" != OFF ]; then
+                I2C_2=ON && I2C_3=OFF && CHANGE=0
+            fi
+            ;;
+        *i2c-3*)
+            if [ "$I2C_2" != OFF ] || [ "$I2C_3" != ON ]; then
+                I2C_2=OFF && I2C_3=ON && CHANGE=0
+            fi
+            ;;
+        "")
+            if [ "$I2C_2" != OFF ] || [ "$I2C_3" != OFF ]; then
+                I2C_2=OFF && I2C_3=OFF && CHANGE=0
+            fi
+            ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
+
+        if [ "$CHANGE" -eq 0 ]; then
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_3" = ON ] && echo okay || echo disabled)"
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the I2C-2 interface will be $([ "$I2C_2" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the I2C-3 interface will be $([ "$I2C_3" = ON ] && echo enabled || echo disabled)." 20 60
+        fi
+    fi
+}
+
+do_serial() {
+    SERIAL_1=OFF
+    if [ -e /dev/ttyS1 ]; then
+        SERIAL_1=ON
+    fi
+
+    SERIAL_2=OFF
+    if [ -e /dev/ttyS2 ]; then
+        SERIAL_2=ON
+    fi
+
+    OPTION=$(whiptail --title "$CONFIG_TITLE" \
+        --backtitle "$DEVICE" \
+        --checklist "Select the serial(UART) interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
+        "1 /dev/ttyS1" "Enable/Disable the serial1 interface." "$SERIAL_1" \
+        "2 /dev/ttyS2" "Enable/Disable the serial2 interface." "$SERIAL_2" \
+        3>&1 1>&2 2>&3)
+    BUTTON=$?
+    if [ $BUTTON -eq 1 ]; then
+        # Cancel
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Ok
+        CHANGE=1
+        case "$OPTION" in
+        *ttyS1*ttyS2*)
+            if [ "$SERIAL_1" != ON ] || [ "$SERIAL_2" != ON ]; then
+                SERIAL_1=ON && SERIAL_2=ON && CHANGE=0
+            fi
+            ;;
+        *ttyS1*)
+            if [ "$SERIAL_1" != ON ] || [ "$SERIAL_2" != OFF ]; then
+                SERIAL_1=ON && SERIAL_2=OFF && CHANGE=0
+            fi
+            ;;
+        *ttyS2*)
+            if [ "$SERIAL_1" != OFF ] || [ "$SERIAL_2" != ON ]; then
+                SERIAL_1=OFF && SERIAL_2=ON && CHANGE=0
+            fi
+            ;;
+        "")
+            if [ "$SERIAL_1" != OFF ] || [ "$SERIAL_2" != OFF ]; then
+                SERIAL_1=OFF && SERIAL_2=OFF && CHANGE=0
+            fi
+            ;;
+        *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
+        esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
+
+        if [ "$CHANGE" -eq 0 ]; then
+            fdtput -t s ${DTB_PATH} /serial@ffd24000 status "$([ "$SERIAL_1" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /serial@ffd23000 status "$([ "$SERIAL_2" = ON ] && echo okay || echo disabled)"
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the serial1 interface will be $([ "$SERIAL_1" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the serial2 interface will be $([ "$SERIAL_2" = ON ] && echo enabled || echo disabled)." 20 60
+        fi
+    fi
+}
+
+do_onewire() {
+    DEFAULT=--defaultno
+    if lsmod | grep -q w1_; then
+        DEFAULT=
+    fi
+
+    whiptail --yesno "Would you like the 1-Wire interface to be enabled?" $DEFAULT 20 60
+    BUTTON=$?
+    if [ $BUTTON -eq 0 ]; then
+        if [ -n "$DEFAULT" ]; then
+            fdtput -t s ${DTB_PATH} /onewire status okay
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the 1-Wire interface will be enabled" 20 60
+        fi
+    elif [ $BUTTON -eq 1 ]; then
+        if [ -z "$DEFAULT" ]; then
+            fdtput -t s ${DTB_PATH} /onewire status disabled
+            ASK_TO_REBOOT=1
+            whiptail --msgbox "After rebooting, the 1-Wire interface will be disabled" 20 60
+        fi
+    fi
+}
+
+###########################################################
+# ADVANCED OPTIONS
+###########################################################
+
+get_resolution() {
+    for i in $(seq "$(grep -c -e "^#.*|.*x.*Hz.*" "$BOOT_INI")"); do
+        READ_RESOLUTION=$(grep -e "^#.*|.*x.*Hz.*" "$BOOT_INI" | sed -n "$i"p)
+        RESOLUTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\1/')
+        RESOLUTION_DESCRIPTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\2/')
+        echo "\"$((i + 1)) $RESOLUTION\"" \
+            "\"$RESOLUTION_DESCRIPTION\"" \
+            "\"$([ "$AUTO_RESOLUTION" = "true" ] && echo "OFF" || echo "$([ "$CURRENT_RESOLUTION" = "$RESOLUTION" ] && echo "ON" || echo "OFF")")\"" \
+            "\\"
+    done
+}
+
+do_resolution() {
+    AUTO_RESOLUTION=$(grep -e "^setenv display_autodetect" "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
+    CURRENT_RESOLUTION=$(grep -e "^setenv hdmimode " "$BOOT_INI" | sed 's/.*\"\(.*\)\"/\1/')
+    eval "OPTION=\$(whiptail --title \"$CONFIG_TITLE\" \\
+            --backtitle \"$DEVICE\" \\
+            --radiolist \"Select the resolution.(using the space bar)\" \"$WT_HEIGHT\" \"$WT_WIDTH\" \"$WT_MENU_HEIGHT\" \\
+            --cancel-button Back \\
+            --ok-button Select \\
+            \"1 AUTO RESOLUTION\" \"Automatic resolution setting\" \"$([ "$AUTO_RESOLUTION" = "true" ] && echo "ON" || echo "OFF")\" \\
+            $(get_resolution)
+            3>&1 1>&2 2>&3)
+            BUTTON=\$?"
+    if [ $BUTTON -eq 1 ]; then
+        # Back
+        return 0
+    elif [ $BUTTON -eq 0 ]; then
+        # Select
+        OPTION=$(echo "$OPTION" | sed 's/.*[[:space:]]\(.*\)/\1/')
+        if [ "$OPTION" = "RESOLUTION" ]; then
+            if [ "$AUTO_RESOLUTION" = "false" ]; then
+                sed -i 's/^setenv display_autodetect \".*\"/setenv display_autodetect \"true\"/' "$BOOT_INI"
+                sed -i 's/^setenv hdmimode \".*\"/setenv hdmimode \"1080p60hz\"/' "$BOOT_INI"
+                ASK_TO_REBOOT=1
+                whiptail --msgbox "After rebooting, the resolution will be automatically set." 20 60
+            fi
+        else
+            if [ "$AUTO_RESOLUTION" = "true" ]; then
+                sed -i 's/^setenv display_autodetect \".*\"/setenv display_autodetect \"false\"/' "$BOOT_INI"
+                ASK_TO_REBOOT=1
+            fi
+            if [ "$CURRENT_RESOLUTION" != "$OPTION" ]; then
+                eval "sed -i 's/^setenv hdmimode \".*\"/setenv hdmimode \"$OPTION\"/' $BOOT_INI"
+                ASK_TO_REBOOT=1
+            fi
+            if [ $ASK_TO_REBOOT -eq 1 ]; then
+                whiptail --msgbox "After rebooting, the resolution will be set to $OPTION." 20 60
+            fi
+        fi
+    fi
+}

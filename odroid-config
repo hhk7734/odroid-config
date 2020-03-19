@@ -68,7 +68,6 @@ calc_wt_size() {
 # GLOBAL VARIABLES
 ASK_TO_REBOOT=0
 calc_wt_size
-BOOT_INI=/media/boot/boot.ini
 CONFIG_VERSION=$(head -n 1 "/usr/lib/odroid-config/debian/changelog" |
     sed 's/.* .\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
 CONFIG_TITLE="ODROID Configuration Tool v$CONFIG_VERSION"
@@ -92,6 +91,10 @@ case "$DEVICE" in
 "Hardkernel Odroid XU4")
     MODEL=xu4
     DEVICE="Hardkernel ODROID XU4"
+    ;;
+"Hardkernel ODROID-C4")
+    MODEL=c4
+    DEVICE="Hardkernel ODROID C4"
     ;;
 *)
     whiptail --yesno "Unsupported device. Some menus are not available. Would you like to continue?" 20 60 2
