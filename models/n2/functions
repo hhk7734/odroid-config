@@ -1,5 +1,8 @@
 #!/bin/sh
 
+DTB_PATH=/media/boot/meson64_odroidn2.dtb
+BOOT_INI=/media/boot/boot.ini
+
 ###########################################################
 # INTERFACING OPTIONS
 ###########################################################
@@ -14,15 +17,15 @@ do_spi() {
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status okay
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000/spidev@0 status okay
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000 status okay
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000/spidev@0 status okay
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the SPI interface will be enabled." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000 status disabled
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/spi@13000/spidev@0 status disabled
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000 status disabled
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/spi@13000/spidev@0 status disabled
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the SPI interface will be disabled." 20 60
         fi
@@ -78,8 +81,8 @@ do_i2c() {
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
 
         if [ "$CHANGE" -eq 0 ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_3" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_3" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the I2C-2 interface will be $([ "$I2C_2" = ON ] && echo enabled || echo disabled).\n\
 After rebooting, the I2C-3 interface will be $([ "$I2C_3" = ON ] && echo enabled || echo disabled)." 20 60
@@ -136,8 +139,8 @@ do_serial() {
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
 
         if [ "$CHANGE" -eq 0 ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /serial@ffd24000 status "$([ "$SERIAL_1" = ON ] && echo okay || echo disabled)"
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /serial@ffd23000 status "$([ "$SERIAL_2" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /serial@ffd24000 status "$([ "$SERIAL_1" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /serial@ffd23000 status "$([ "$SERIAL_2" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the serial1 interface will be $([ "$SERIAL_1" = ON ] && echo enabled || echo disabled).\n\
 After rebooting, the serial2 interface will be $([ "$SERIAL_2" = ON ] && echo enabled || echo disabled)." 20 60
@@ -155,13 +158,13 @@ do_onewire() {
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status okay
+            fdtput -t s ${DTB_PATH} /onewire status okay
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the 1-Wire interface will be enabled" 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            fdtput -t s /media/boot/meson64_odroidn2.dtb /onewire status disabled
+            fdtput -t s ${DTB_PATH} /onewire status disabled
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the 1-Wire interface will be disabled" 20 60
         fi

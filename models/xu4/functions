@@ -1,5 +1,7 @@
 #!/bin/sh
 
+DTB_PATH=/media/boot/exynos5422-odroidxu4.dtb
+
 do_spi() {
     DEFAULT=--defaultno
     if exist_in "/dev/" "spidev1*"; then
@@ -10,13 +12,13 @@ do_spi() {
     BUTTON=$?
     if [ $BUTTON -eq 0 ]; then
         if [ -n "$DEFAULT" ]; then
-            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/spi@12d30000 status okay
+            fdtput -t s ${DTB_PATH} /soc/spi@12d30000 status okay
             ASK_TO_REBOOT=1
             whiptail --msgbox "The SPI interface will be enabled after rebooting." 20 60
         fi
     elif [ $BUTTON -eq 1 ]; then
         if [ -z "$DEFAULT" ]; then
-            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/spi@12d30000 status disabled
+            fdtput -t s ${DTB_PATH} /soc/spi@12d30000 status disabled
             ASK_TO_REBOOT=1
             whiptail --msgbox "The SPI interface will be disabled after rebooting." 20 60
         fi
@@ -72,8 +74,8 @@ do_i2c() {
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
 
         if [ "$CHANGE" -eq 0 ]; then
-            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/i2c@12C70000 status "$([ "$I2C_1" = ON ] && echo okay || echo disabled)"
-            fdtput -t s /media/boot/exynos5422-odroidxu4.dtb /soc/i2c@12cb0000 status "$([ "$I2C_5" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/i2c@12C70000 status "$([ "$I2C_1" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/i2c@12cb0000 status "$([ "$I2C_5" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the I2C-1 interface will be $([ "$I2C_1" = ON ] && echo enabled || echo disabled).\n\
 After rebooting, the I2C-5 interface will be $([ "$I2C_5" = ON ] && echo enabled || echo disabled)." 20 60
