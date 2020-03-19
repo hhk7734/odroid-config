@@ -39,8 +39,8 @@ install:
 	install -m 0755 odroid-config $(DESTDIR)$(prefix)/bin
 	install -m 0644 debian/changelog $(DESTDIR)$(prefix)/lib/odroid-config/debian
 	install -m 0755 Makefile $(DESTDIR)$(prefix)/lib/odroid-config
-	cp -r models $(DESTDIR)$(prefix)/lib/odroid-config
-	chmod -R 644 $(DESTDIR)$(prefix)/lib/odroid-config
+	cp -ar models $(DESTDIR)$(prefix)/lib/odroid-config
+	chmod 644 $(DESTDIR)$(prefix)/lib/odroid-config/models/*/*
 
 .PHONY: clean
 clean:
