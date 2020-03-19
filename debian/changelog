@@ -1,3 +1,11 @@
+odroid-config (0.3.0) unstable; urgency=medium
+
+  * Add C4 support
+  * Simplify file path
+  * Fix problem of changing directory permission
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Thu, 19 Mar 2020 19:08:59 +0900
+
 odroid-config (0.2.6) unstable; urgency=medium
 
   * Refactor do_update()
