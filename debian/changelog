@@ -1,3 +1,9 @@
+odroid-config (0.3.1) unstable; urgency=medium
+
+  * Fix issue where apt does not recognize C4
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Fri, 20 Mar 2020 15:04:32 +0900
+
 odroid-config (0.3.0) unstable; urgency=medium
 
   * Add C4 support
