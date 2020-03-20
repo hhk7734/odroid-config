@@ -21,6 +21,10 @@ case "$1" in
                 MODEL=xu4
                 DEVICE="Hardkernel ODROID XU4"
                 ;;
+            "Hardkernel ODROID-C4")
+                MODEL=c4
+                DEVICE="Hardkernel ODROID C4"
+                ;;
             *)
                 echo "Unknown board type"
                 exit 1
