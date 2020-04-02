@@ -1,3 +1,9 @@
+odroid-config (0.3.2) unstable; urgency=medium
+
+  * ODROID-C4: fix i2c bus number
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Thu, 02 Apr 2020 18:37:54 +0900
+
 odroid-config (0.3.1) unstable; urgency=medium
 
   * Fix issue where apt does not recognize C4
