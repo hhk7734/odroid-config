@@ -33,21 +33,21 @@ do_spi() {
 }
 
 do_i2c() {
+    I2C_1=OFF
+    if [ -e /dev/i2c-1 ]; then
+        I2C_1=ON
+    fi
+
     I2C_2=OFF
     if [ -e /dev/i2c-2 ]; then
         I2C_2=ON
     fi
 
-    I2C_3=OFF
-    if [ -e /dev/i2c-3 ]; then
-        I2C_3=ON
-    fi
-
     OPTION=$(whiptail --title "$CONFIG_TITLE" \
         --backtitle "$DEVICE" \
         --checklist "Select the I2C interfaces to be enabled.(using the space bar)" "$WT_HEIGHT" "$WT_WIDTH" "$WT_MENU_HEIGHT" \
-        "1 /dev/i2c-2" "Enable/Disable the I2C-2 interface." "$I2C_2" \
-        "2 /dev/i2c-3" "Enable/Disable the I2C-3 interface." "$I2C_3" \
+        "1 /dev/i2c-1" "Enable/Disable the I2C-1 interface." "$I2C_1" \
+        "2 /dev/i2c-2" "Enable/Disable the I2C-2 interface." "$I2C_2" \
         3>&1 1>&2 2>&3)
     BUTTON=$?
     if [ $BUTTON -eq 1 ]; then
@@ -57,35 +57,35 @@ do_i2c() {
         # Ok
         CHANGE=1
         case "$OPTION" in
-        *i2c-2*i2c-3*)
-            if [ "$I2C_2" != ON ] || [ "$I2C_3" != ON ]; then
-                I2C_2=ON && I2C_3=ON && CHANGE=0
+        *i2c-1*i2c-2*)
+            if [ "$I2C_1" != ON ] || [ "$I2C_2" != ON ]; then
+                I2C_1=ON && I2C_2=ON && CHANGE=0
+            fi
+            ;;
+        *i2c-1*)
+            if [ "$I2C_1" != ON ] || [ "$I2C_2" != OFF ]; then
+                I2C_1=ON && I2C_2=OFF && CHANGE=0
             fi
             ;;
         *i2c-2*)
-            if [ "$I2C_2" != ON ] || [ "$I2C_3" != OFF ]; then
-                I2C_2=ON && I2C_3=OFF && CHANGE=0
-            fi
-            ;;
-        *i2c-3*)
-            if [ "$I2C_2" != OFF ] || [ "$I2C_3" != ON ]; then
-                I2C_2=OFF && I2C_3=ON && CHANGE=0
+            if [ "$I2C_1" != OFF ] || [ "$I2C_2" != ON ]; then
+                I2C_1=OFF && I2C_2=ON && CHANGE=0
             fi
             ;;
         "")
-            if [ "$I2C_2" != OFF ] || [ "$I2C_3" != OFF ]; then
-                I2C_2=OFF && I2C_3=OFF && CHANGE=0
+            if [ "$I2C_1" != OFF ] || [ "$I2C_2" != OFF ]; then
+                I2C_1=OFF && I2C_2=OFF && CHANGE=0
             fi
             ;;
         *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 ;;
         esac || whiptail --msgbox "There was an error running option $OPTION" 20 60
 
         if [ "$CHANGE" -eq 0 ]; then
-            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
-            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_3" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1d000 status "$([ "$I2C_1" = ON ] && echo okay || echo disabled)"
+            fdtput -t s ${DTB_PATH} /soc/cbus@ffd00000/i2c@1c000 status "$([ "$I2C_2" = ON ] && echo okay || echo disabled)"
             ASK_TO_REBOOT=1
-            whiptail --msgbox "After rebooting, the I2C-2 interface will be $([ "$I2C_2" = ON ] && echo enabled || echo disabled).\n\
-After rebooting, the I2C-3 interface will be $([ "$I2C_3" = ON ] && echo enabled || echo disabled)." 20 60
+            whiptail --msgbox "After rebooting, the I2C-1 interface will be $([ "$I2C_1" = ON ] && echo enabled || echo disabled).\n\
+After rebooting, the I2C-2 interface will be $([ "$I2C_2" = ON ] && echo enabled || echo disabled)." 20 60
         fi
     fi
 }
