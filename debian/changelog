@@ -1,3 +1,9 @@
+odroid-config (0.3.3) unstable; urgency=medium
+
+  * ODROID-C4: fix i2c bus number
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Fri, 17 Apr 2020 14:58:42 +0900
+
 odroid-config (0.3.2) unstable; urgency=medium
 
   * ODROID-C4: fix i2c bus number
