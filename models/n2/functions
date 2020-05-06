@@ -180,9 +180,18 @@ get_resolution() {
         READ_RESOLUTION=$(grep -e "^#.*|.*x.*Hz.*" "$BOOT_INI" | sed -n "$i"p)
         RESOLUTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\1/')
         RESOLUTION_DESCRIPTION=$(echo "$READ_RESOLUTION" | sed 's/^#.*\"\(.*\)\".*|[[:space:]]*\(.*\)$/\2/')
+        if [ "$AUTO_RESOLUTION" = "true" ]; then
+            STATUS="OFF"
+        else
+            if [ "$CURRENT_RESOLUTION" = "$RESOLUTION" ]; then
+                STATUS="ON"
+            else
+                STATUS="OFF"
+            fi
+        fi
         echo "\"$((i + 1)) $RESOLUTION\"" \
             "\"$RESOLUTION_DESCRIPTION\"" \
-            "\"$([ "$AUTO_RESOLUTION" = "true" ] && echo "OFF" || echo "$([ "$CURRENT_RESOLUTION" = "$RESOLUTION" ] && echo "ON" || echo "OFF")")\"" \
+            "\"$STATUS\"" \
             "\\"
     done
 }

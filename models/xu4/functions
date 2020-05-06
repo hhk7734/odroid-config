@@ -76,7 +76,7 @@ do_i2c() {
         if [ "$CHANGE" -eq 0 ]; then
             fdtput -t s ${DTB_PATH} /soc/i2c@12C70000 status "$([ "$I2C_1" = ON ] && echo okay || echo disabled)"
             fdtput -t s ${DTB_PATH} /soc/i2c@12cb0000 status "$([ "$I2C_5" = ON ] && echo okay || echo disabled)"
-            ASK_TO_REBOOT=1
+            export ASK_TO_REBOOT=1
             whiptail --msgbox "After rebooting, the I2C-1 interface will be $([ "$I2C_1" = ON ] && echo enabled || echo disabled).\n\
 After rebooting, the I2C-5 interface will be $([ "$I2C_5" = ON ] && echo enabled || echo disabled)." 20 60
         fi
