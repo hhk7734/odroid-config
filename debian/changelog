@@ -1,3 +1,11 @@
+odroid-config (0.3.4) unstable; urgency=medium
+
+  * ODROID-C4: fix i2c bus detection
+  * Modify code according to shellcheck notify
+  * ODROID-N2: fix i2c bus detection
+
+ -- Hyeonki Hong <hhk7734@gmail.com>  Wed, 06 May 2020 11:06:20 +0900
+
 odroid-config (0.3.3) unstable; urgency=medium
 
   * ODROID-C4: fix i2c bus number
